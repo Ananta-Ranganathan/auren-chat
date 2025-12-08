@@ -1,7 +1,33 @@
-import { codegenNativeComponent, type ViewProps } from 'react-native';
+import type { HostComponent, ViewProps } from 'react-native';
+import { codegenNativeComponent } from 'react-native';
+import type { CodegenTypes } from 'react-native';
 
-interface NativeProps extends ViewProps {
-  color?: string;
+export interface ThemeConfiguration {
+  mode: string;
+  color1: string;
+  color2: string;
 }
 
-export default codegenNativeComponent<NativeProps>('AurenChatView');
+export interface ImageData {
+  publicUrl?: string;
+  original_filename?: string;
+}
+
+export interface Message {
+  uuid: string;
+  text: string;
+  isUser: boolean;
+  readByCharacterAt?: CodegenTypes.Double;
+  isTypingIndicator?: boolean;
+  image?: ImageData;
+  reaction?: string;
+}
+
+export interface NativeProps extends ViewProps {
+  messages: Message[];
+  theme: ThemeConfiguration;
+}
+
+export default codegenNativeComponent<NativeProps>(
+  'AurenChatView'
+) as HostComponent<NativeProps>;
