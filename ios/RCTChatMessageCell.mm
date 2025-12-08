@@ -219,7 +219,7 @@
   self.reactionTopConstraint.constant = hasReaction ? -6.0 : 0.0;
 
   self.labelTrailingConstraint.constant = isUser ? -24.0 : -16.0;
-  self.topConstraint.constant = sameAsPrevious ? 2.0 : 12.0;
+  self.topConstraint.constant = sameAsPrevious ? 0.0 : 12.0;
 
   [self layoutIfNeeded];
   self.gradientLayer.frame = _bubbleView.bounds;
