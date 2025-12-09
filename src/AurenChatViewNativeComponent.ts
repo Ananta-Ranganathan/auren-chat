@@ -27,6 +27,7 @@ export interface NativeProps extends ViewProps {
   messages: Message[];
   theme: ThemeConfiguration;
   composerHeight: CodegenTypes.Double;
+  onRequestDismissKeyboard?: CodegenTypes.DirectEventHandler<null>;
 }
 
 export default codegenNativeComponent<NativeProps>(

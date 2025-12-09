@@ -146,6 +146,7 @@ function AppContent() {
           }}
           style={{ flex: 1 }}
           composerHeight={composerHeight}
+          onRequestDismissKeyboard={() => Keyboard.dismiss()}
         />
       </View>
 

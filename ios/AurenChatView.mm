@@ -442,18 +442,24 @@ UIColor *colorFromHex(const std::string &hex) {
     CGPoint location = [recognizer locationInView:_collectionView];
     NSIndexPath *indexPath = [_collectionView indexPathForItemAtPoint:location];
     
+    BOOL shouldDismiss = NO;
+    
     if (indexPath == nil) {
-      NSLog(@"indexpath is nil, TODO REQUEST DISMISS KEYBOARD");
-        return;
+        shouldDismiss = YES;
+    } else {
+        RCTChatMessageCell *cell = (RCTChatMessageCell *)[_collectionView cellForItemAtIndexPath:indexPath];
+        CGPoint pointInCell = [recognizer locationInView:cell];
+        
+        if (![cell.bubbleView pointInside:[cell.bubbleView convertPoint:pointInCell fromView:cell] withEvent:nil]) {
+            shouldDismiss = YES;
+        }
     }
     
-    RCTChatMessageCell *cell = (RCTChatMessageCell *)[_collectionView cellForItemAtIndexPath:indexPath];
-    CGPoint pointInCell = [recognizer locationInView:cell];
-    
-    if (![cell.bubbleView pointInside:[cell.bubbleView convertPoint:pointInCell fromView:cell] withEvent:nil]) {
-      NSLog(@"tap was not inside a bubble TODO REQUEST DISMISS KEYBOARD");
-    } else {
-      NSLog(@"tap was inside a bubble");
+    if (shouldDismiss && _eventEmitter) {
+        auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(_eventEmitter);
+        if (emitter) {
+            emitter->onRequestDismissKeyboard({});
+        }
     }
 }
 
