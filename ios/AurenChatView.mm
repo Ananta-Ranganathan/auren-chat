@@ -25,6 +25,7 @@ using namespace facebook::react;
   UIColor *_botGradientStart;
   UIColor *_botGradientEnd;
   UIColor *_themeBaseColor;
+  CGFloat _composerHeight;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider
@@ -117,6 +118,14 @@ UIColor *colorFromHex(const std::string &hex) {
           [_collectionView reloadData];
       }
   }
+  
+  CGFloat composerHeight = newViewProps.composerHeight;
+  UIEdgeInsets currentInsets = _collectionView.contentInset;
+  currentInsets.bottom = _keyboardBottomInset + composerHeight;
+  _collectionView.contentInset = currentInsets;
+  _collectionView.verticalScrollIndicatorInsets = currentInsets;
+  _composerHeight = newViewProps.composerHeight;
+  
   // Build new messages vector
   std::vector<AurenChatViewMessagesStruct> newMessages;
   newMessages.reserve(newViewProps.messages.size());
@@ -339,6 +348,7 @@ UIColor *colorFromHex(const std::string &hex) {
   CGFloat overlap =
       CGRectGetMaxY(self.bounds) - CGRectGetMinY(keyboardFrameInSelf);
   CGFloat newBottomInset = MAX(overlap, 0.0);
+  _keyboardBottomInset = newBottomInset;
 
   UIEdgeInsets oldContentInsets = _collectionView.contentInset;
   UIEdgeInsets oldIndicatorInsets = _collectionView.verticalScrollIndicatorInsets;
@@ -356,10 +366,10 @@ UIColor *colorFromHex(const std::string &hex) {
 
   // New insets
   UIEdgeInsets newContentInsets = oldContentInsets;
-  newContentInsets.bottom = newBottomInset;
+  newContentInsets.bottom = newBottomInset + _composerHeight;
 
   UIEdgeInsets newIndicatorInsets = oldIndicatorInsets;
-  newIndicatorInsets.bottom = newBottomInset;
+  newIndicatorInsets.bottom = newBottomInset + _composerHeight;
 
   CGFloat deltaBottom = newContentInsets.bottom - oldContentInsets.bottom;
   CGPoint newOffset = _collectionView.contentOffset;

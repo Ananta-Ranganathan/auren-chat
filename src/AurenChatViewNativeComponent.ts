@@ -26,6 +26,7 @@ export interface Message {
 export interface NativeProps extends ViewProps {
   messages: Message[];
   theme: ThemeConfiguration;
+  composerHeight: CodegenTypes.Double;
 }
 
 export default codegenNativeComponent<NativeProps>(

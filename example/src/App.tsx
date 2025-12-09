@@ -128,6 +128,7 @@ function AppContent() {
   };
   const [color1, color2] = gradientThemes[theme] ?? gradientThemes.peach;
 
+  const [composerHeight, setComposerHeight] = useState(0.0);
   return (
     <View style={[StyleSheet.absoluteFill, styles.container]}>
       <View
@@ -144,11 +145,14 @@ function AppContent() {
             color2,
           }}
           style={{ flex: 1 }}
+          composerHeight={composerHeight}
         />
       </View>
+
       <KeyboardAvoidingView
         behavior="position"
         style={styles.controlsContainer}
+        onLayout={(e) => setComposerHeight(e.nativeEvent.layout.height)}
       >
         <TextInput
           style={styles.input}
