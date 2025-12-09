@@ -348,7 +348,7 @@ UIColor *colorFromHex(const std::string &hex) {
   CGFloat overlap =
       CGRectGetMaxY(self.bounds) - CGRectGetMinY(keyboardFrameInSelf);
   CGFloat newBottomInset = MAX(overlap, 0.0);
-  _keyboardBottomInset = newBottomInset;
+
 
   UIEdgeInsets oldContentInsets = _collectionView.contentInset;
   UIEdgeInsets oldIndicatorInsets = _collectionView.verticalScrollIndicatorInsets;
@@ -390,6 +390,7 @@ UIColor *colorFromHex(const std::string &hex) {
                         delay:0
                       options:curve
                    animations:^{
+                       self->_keyboardBottomInset = newBottomInset;
                        self->_collectionView.contentInset = newContentInsets;
                        self->_collectionView.verticalScrollIndicatorInsets = newIndicatorInsets;
                        self->_collectionView.contentOffset = newOffset;
