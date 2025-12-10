@@ -304,13 +304,26 @@ UIColor *colorFromHex(const std::string &hex) {
                themeColor:_themeBaseColor];
 
   // Convert C++ image to NSDictionary
-  NSDictionary *imageDict = nil;
+  // Build a mutable dictionary and only add keys when present
+  NSMutableDictionary *imageDict = [NSMutableDictionary dictionary];
+
   if (!msg.image.publicUrl.empty()) {
-      imageDict = @{
-          @"public_url": [NSString stringWithUTF8String:msg.image.publicUrl.c_str()]
-      };
+      NSString *publicUrl = [NSString stringWithUTF8String:msg.image.publicUrl.c_str()];
+      if (publicUrl) { // stringWithUTF8String returns nil on invalid UTF-8
+          imageDict[@"public_url"] = publicUrl;
+      }
   }
-  [cell configureWithImage:imageDict];
+
+  if (!msg.image.originalFilename.empty()) {
+      NSString *filename = [NSString stringWithUTF8String:msg.image.originalFilename.c_str()];
+      if (filename) {
+          imageDict[@"original_filename"] = filename;
+      }
+  }
+
+  // If no keys were added, pass nil; otherwise pass an immutable copy
+  NSDictionary *finalImageDict = (imageDict.count > 0) ? [imageDict copy] : nil;
+  [cell configureWithImage:finalImageDict];
 
   // Set up tap callback to emit event
 //  NSString *messageUuid = [NSString stringWithUTF8String:msg.uuid.c_str()];

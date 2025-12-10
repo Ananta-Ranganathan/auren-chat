@@ -45,7 +45,9 @@ function AppContent() {
       isUser: true,
       text: 'dont you think glasses are great',
       image: {
-        publicUrl: 'https://pbs.twimg.com/media/F2IQC7cW8AEQTbh.jpg',
+        // publicUrl: 'https://pbs.twimg.com/media/F2IQC7cW8AEQTbh.jpg',
+        publicUrl:
+          'https://content.auren.app/images/0679ac00-8d4a-7a5c-8000-8f1f0a764ea6/45560aa73d422764ef81fa0b6770c04b740f72beb73b0065a380cbcae9ded330.jpg',
       },
     },
     {

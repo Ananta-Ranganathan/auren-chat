@@ -247,20 +247,16 @@
     [_imageStackView removeArrangedSubview:subview];
     [subview removeFromSuperview];
   }
-  
+
   BOOL hasImage = (image != nil);
   _minWidthConstraint.active = hasImage;
   self.labelTopToBubbleConstraint.active = !hasImage;
   self.labelTopToImageConstraint.active = hasImage;
 
-  if (!hasImage) {
-    return;
-  }
-  
+  if (!hasImage) return;
+
   NSString *urlString = image[@"public_url"];
-  if (!urlString) {
-    return;
-  }
+  NSString *filenameString = image[@"original_filename"];
 
   UIImageView *imageView = [[UIImageView alloc] init];
   imageView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -276,16 +272,115 @@
   [imageView addGestureRecognizer:tap];
   [_imageStackView addArrangedSubview:imageView];
 
-  NSURL *url = [NSURL URLWithString:urlString];
-  NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-    if (data && !error) {
-      UIImage *downloadedImage = [UIImage imageWithData:data];
-      dispatch_async(dispatch_get_main_queue(), ^{
-        imageView.image = downloadedImage;
-      });
+  // Helper block to set image on main thread
+  void (^setImageFromData)(NSData *) = ^(NSData *data){
+    if (!data) return;
+    UIImage *downloadedImage = [UIImage imageWithData:data];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      imageView.image = downloadedImage;
+    });
+  };
+
+  // 1) If public_url exists and is valid, fetch it (remote)
+  if (urlString.length > 0) {
+    NSURL *url = [NSURL URLWithString:urlString];
+    if (url && url.scheme.length > 0) {
+      NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (data && !error) {
+          setImageFromData(data);
+        } else {
+          // If remote fetch fails, fall back to filename below
+          [self loadImageFromFilename:filenameString intoImageView:imageView completion:setImageFromData];
+        }
+      }];
+      [task resume];
+      return;
     }
-  }];
-  [task resume];
+    // If urlString was not a valid URL, attempt filename fallback below
+  }
+
+  // 2) No valid public_url, try to load from filename fallback
+  [self loadImageFromFilename:filenameString intoImageView:imageView completion:setImageFromData];
+}
+
+// Separate helper method to handle filename cases and background loading
+- (void)loadImageFromFilename:(NSString *)filename intoImageView:(UIImageView *)imageView completion:(void(^)(NSData *))completion
+{
+  if (!filename || filename.length == 0) {
+    return;
+  }
+
+  // If filename looks like a full URL string, handle it via URLSession
+  NSURL *maybeURL = [NSURL URLWithString:filename];
+  if (maybeURL && maybeURL.scheme.length > 0) {
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:maybeURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+      if (data && !error) {
+        completion(data);
+      }
+    }];
+    [task resume];
+    return;
+  }
+
+  // If it's an absolute path
+  if ([filename hasPrefix:@"/"]) {
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+      if ([[NSFileManager defaultManager] fileExistsAtPath:filename]) {
+        NSData *data = [NSData dataWithContentsOfFile:filename];
+        completion(data);
+      }
+    });
+    return;
+  }
+
+  // Try app bundle (filename may include extension)
+  NSString *name = [filename stringByDeletingPathExtension];
+  NSString *ext = [filename pathExtension];
+  NSString *bundlePath = nil;
+  if (ext.length > 0) {
+    bundlePath = [[NSBundle mainBundle] pathForResource:name ofType:ext];
+  } else {
+    // no extension provided — try common image extensions
+    NSArray *exts = @[@"png", @"jpg", @"jpeg", @"gif", @"heic"];
+    for (NSString *tryExt in exts) {
+      bundlePath = [[NSBundle mainBundle] pathForResource:filename ofType:tryExt];
+      if (bundlePath) break;
+    }
+  }
+
+  if (bundlePath) {
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+      NSData *data = [NSData dataWithContentsOfFile:bundlePath];
+      completion(data);
+    });
+    return;
+  }
+
+  // Try Documents directory (or Caches)
+  NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+  if (documentsPath) {
+    NSString *fullPath = [documentsPath stringByAppendingPathComponent:filename];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+      dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSData *data = [NSData dataWithContentsOfFile:fullPath];
+        completion(data);
+      });
+      return;
+    }
+  }
+
+  // Optionally: try Caches directory
+  NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+  if (cachesPath) {
+    NSString *fullPath = [cachesPath stringByAppendingPathComponent:filename];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+      dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSData *data = [NSData dataWithContentsOfFile:fullPath];
+        completion(data);
+      });
+      return;
+    }
+  }
 }
 
 - (void)handleImageTap:(UITapGestureRecognizer *)recognizer

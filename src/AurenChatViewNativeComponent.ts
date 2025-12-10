@@ -10,7 +10,7 @@ export interface ThemeConfiguration {
 
 export interface ImageData {
   publicUrl?: string;
-  original_filename?: string;
+  originalFilename?: string;
 }
 
 export interface Message {
