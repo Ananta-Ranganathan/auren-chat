@@ -196,7 +196,7 @@ UIColor *colorFromHex(const std::string &hex) {
       if (newContentHeight > newVisibleHeight - 100) {
         UIEdgeInsets newInsets = self->_collectionView.contentInset;
         CGFloat newBottomOffset = newContentHeight + newInsets.bottom - newVisibleHeight;
-        [self->_collectionView setContentOffset:CGPointMake(0, newBottomOffset) animated:YES];
+        [self->_collectionView setContentOffset:CGPointMake(0, newBottomOffset) animated:NO];
       }
     }
   };
