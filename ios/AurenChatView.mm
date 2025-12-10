@@ -197,18 +197,17 @@ UIColor *colorFromHex(const std::string &hex) {
   BOOL hasReadReceiptChanges = toReconfigure.count > 0;
 
   auto scrollToBottomIfNeeded = ^{
-    if (wasAtBottom && self->_messages.size() > 0) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-        CGFloat newContentHeight = self->_collectionView.contentSize.height;
-        CGFloat newVisibleHeight = self->_collectionView.bounds.size.height;
-        
-        if (newContentHeight > newVisibleHeight - 100) {
-          UIEdgeInsets newInsets = self->_collectionView.contentInset;
-          CGFloat newBottomOffset = newContentHeight + newInsets.bottom - newVisibleHeight;
-          [self->_collectionView setContentOffset:CGPointMake(0, newBottomOffset) animated:YES];
-        }
-      });
-    }
+      if (wasAtBottom && self->_messages.size() > 0) {
+          NSInteger lastSection = [self->_collectionView numberOfSections] - 1;
+          NSInteger lastItemIndex = [self->_collectionView numberOfItemsInSection:lastSection] - 1;
+
+          if (lastSection >= 0 && lastItemIndex >= 0) {
+              NSIndexPath *lastIndexPath = [NSIndexPath indexPathForItem:lastItemIndex inSection:lastSection];
+              [self->_collectionView scrollToItemAtIndexPath:lastIndexPath
+                                            atScrollPosition:UICollectionViewScrollPositionBottom
+                                                    animated:YES];
+          }
+      }
   };
 
   if (hasStructuralChanges) {
