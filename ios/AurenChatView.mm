@@ -449,7 +449,7 @@ UIColor *colorFromHex(const std::string &hex) {
                                       attributes:@{NSFontAttributeName: [UIFont preferredFontForTextStyle:UIFontTextStyleBody]}
                                          context:nil];
     CGFloat imageHeight = 0;
-    if (!msg.image.publicUrl.empty()) {
+    if (!msg.image.publicUrl.empty() || !msg.image.originalFilename.empty()) {
         imageHeight = 200.0;
     }
 
