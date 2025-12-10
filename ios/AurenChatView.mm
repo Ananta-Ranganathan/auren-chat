@@ -528,6 +528,4 @@ Class<RCTComponentViewProtocol> AurenChatViewCls(void)
     return AurenChatView.class;
 }
 
-
-
 @end

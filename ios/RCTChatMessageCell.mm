@@ -217,7 +217,7 @@
   self.reactionTrailingConstraint.active = !isUser;
   self.reactionTopConstraint.constant = hasReaction ? -6.0 : 0.0;
 
-  self.labelTrailingConstraint.constant = isUser ? -26.0 : -18.0;
+  self.labelTrailingConstraint.constant = isUser ? -25.0 : -12.0;
   self.topConstraint.constant = sameAsPrevious ? 0.0 : 12.0;
 
   [self layoutIfNeeded];

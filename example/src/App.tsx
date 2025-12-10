@@ -69,7 +69,7 @@ function AppContent() {
     {
       uuid: '67',
       isUser: true,
-      text: 'what the fuck',
+      text: "that's just the constraints of reality",
     },
     {
       uuid: '6',
