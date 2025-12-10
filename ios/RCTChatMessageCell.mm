@@ -97,7 +97,7 @@
 
     [NSLayoutConstraint activateConstraints:@[
       [_readReceiptImageView.trailingAnchor constraintEqualToAnchor:_bubbleView.trailingAnchor constant:-8.0],
-      [_readReceiptImageView.centerYAnchor constraintEqualToAnchor:_label.lastBaselineAnchor constant:-7.0],
+      [_readReceiptImageView.bottomAnchor constraintEqualToAnchor:_bubbleView.bottomAnchor constant:-12.0],
       [_readReceiptImageView.widthAnchor constraintEqualToConstant:14.0],
       [_readReceiptImageView.heightAnchor constraintEqualToConstant:14.0],
     ]];
