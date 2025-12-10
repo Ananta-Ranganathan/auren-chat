@@ -2,12 +2,12 @@ import {
   View,
   StyleSheet,
   Button,
-  KeyboardAvoidingView,
   Keyboard,
   TextInput,
+  LayoutAnimation,
 } from 'react-native';
 import { AurenChatView, type Message } from 'react-native-auren-chat';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const gradientThemes = {
   // Row 1 - Warm and red/pink
@@ -129,48 +129,76 @@ function AppContent() {
   const [color1, color2] = gradientThemes[theme] ?? gradientThemes.peach;
 
   const [composerHeight, setComposerHeight] = useState(0.0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardWillShow', (e) => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   return (
-    <View style={[StyleSheet.absoluteFill, styles.container]}>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-        }}
-      >
-        <AurenChatView
-          messages={messages}
-          theme={{
-            mode,
-            color1,
-            color2,
+    <>
+      <View style={[StyleSheet.absoluteFill, styles.container]}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
           }}
-          style={{ flex: 1 }}
-          composerHeight={composerHeight}
-          onRequestDismissKeyboard={() => Keyboard.dismiss()}
-        />
+        >
+          <AurenChatView
+            messages={messages}
+            theme={{
+              mode,
+              color1,
+              color2,
+            }}
+            style={{ flex: 1 }}
+            composerHeight={composerHeight}
+            onRequestDismissKeyboard={() => Keyboard.dismiss()}
+          />
+        </View>
       </View>
 
-      <KeyboardAvoidingView
-        behavior="position"
-        style={styles.controlsContainer}
-        onLayout={(e) => setComposerHeight(e.nativeEvent.layout.height)}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: keyboardHeight,
+          right: 0,
+          left: 0,
+        }}
       >
-        <TextInput
-          style={styles.input}
-          placeholder="Tap here to type"
-          placeholderTextColor="#666"
-          value={draftText}
-          onChangeText={setDraftText}
-          multiline
-        />
-        <View style={styles.buttonsRow}>
-          <Button title="dismiss" onPress={() => Keyboard.dismiss()} />
-          <Button title="theme" onPress={stepTheme} />
-          <Button title="mode" onPress={toggleMode} />
-          <Button title="add" onPress={addMessage} />
+        <View
+          style={styles.controlsContainer}
+          onLayout={(e) => {
+            console.log('setting composer height', e.nativeEvent.layout.height);
+            setComposerHeight(e.nativeEvent.layout.height);
+          }}
+        >
+          <TextInput
+            style={styles.input}
+            placeholder="Tap here to type"
+            placeholderTextColor="#666"
+            value={draftText}
+            onChangeText={setDraftText}
+            multiline
+          />
+          <View style={styles.buttonsRow}>
+            <Button title="dismiss" onPress={() => Keyboard.dismiss()} />
+            <Button title="theme" onPress={stepTheme} />
+            <Button title="mode" onPress={toggleMode} />
+            <Button title="add" onPress={addMessage} />
+          </View>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+      </View>
+    </>
   );
 }
 

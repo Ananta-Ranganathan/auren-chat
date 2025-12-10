@@ -120,11 +120,19 @@ UIColor *colorFromHex(const std::string &hex) {
   }
   
   CGFloat composerHeight = newViewProps.composerHeight;
-  UIEdgeInsets currentInsets = _collectionView.contentInset;
-  currentInsets.bottom = _keyboardBottomInset + composerHeight;
-  _collectionView.contentInset = currentInsets;
-  _collectionView.verticalScrollIndicatorInsets = currentInsets;
-  _composerHeight = newViewProps.composerHeight;
+  if (composerHeight != _composerHeight) {
+    CGFloat delta = composerHeight - _composerHeight;
+    _composerHeight = composerHeight;
+    
+    UIEdgeInsets newInsets = _collectionView.contentInset;
+    newInsets.bottom = _keyboardBottomInset + composerHeight;
+    _collectionView.contentInset = newInsets;
+    _collectionView.verticalScrollIndicatorInsets = newInsets;
+    
+    CGPoint offset = _collectionView.contentOffset;
+    offset.y += delta;
+    _collectionView.contentOffset = offset;
+  }
   
   // Build new messages vector
   std::vector<AurenChatViewMessagesStruct> newMessages;
