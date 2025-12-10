@@ -149,7 +149,7 @@ UIColor *colorFromHex(const std::string &hex) {
   UIEdgeInsets insets = _collectionView.contentInset;
   CGFloat bottomOffset = MAX(contentHeight + insets.bottom - visibleHeight, -insets.top);
   CGFloat currentOffsetY = _collectionView.contentOffset.y;
-  BOOL wasAtBottom = (contentHeight <= visibleHeight) || (currentOffsetY >= bottomOffset - 2.0);
+  BOOL wasAtBottom = (contentHeight <= visibleHeight) || (currentOffsetY >= bottomOffset - 50.0);
 
   // Build UUID lookup for old messages
   std::unordered_map<std::string, NSInteger> oldIndexByUUID;
