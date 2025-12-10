@@ -129,9 +129,11 @@ UIColor *colorFromHex(const std::string &hex) {
     _collectionView.contentInset = newInsets;
     _collectionView.verticalScrollIndicatorInsets = newInsets;
     
-    CGPoint offset = _collectionView.contentOffset;
-    offset.y += delta;
-    _collectionView.contentOffset = offset;
+    if (delta > 0) {
+        CGPoint offset = _collectionView.contentOffset;
+        offset.y += delta;
+        _collectionView.contentOffset = offset;
+    }
   }
   
   // Build new messages vector
