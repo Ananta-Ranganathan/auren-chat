@@ -105,8 +105,8 @@ function AppContent() {
           ...currentMessages,
           { ...pendingMsg, readByCharacterAt: 1.0 },
         ]);
-      }, 500);
-    }, 1000);
+      }, 50);
+    }, 50);
   };
 
   const themeKeys = Object.keys(gradientThemes) as ThemeKey[];
