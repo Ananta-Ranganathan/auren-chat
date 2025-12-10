@@ -27,7 +27,7 @@
     _bubbleView = [UIView new];
     _bubbleView.translatesAutoresizingMaskIntoConstraints = NO;
     _bubbleView.backgroundColor = [UIColor colorWithRed:0.2 green:0.4 blue:1.0 alpha:1.0];
-    _bubbleView.layer.cornerRadius = 20.0;
+    _bubbleView.layer.cornerRadius = 18.0;
     _bubbleView.layer.masksToBounds = YES;
 
     _label = [UILabel new];
@@ -62,9 +62,9 @@
     [self.contentView addSubview:_bubbleView];
 
     const CGFloat bubbleVertical = 4.0;
-    const CGFloat bubbleHorizontal = 16.0;
+    const CGFloat bubbleHorizontal = 12.0;
     const CGFloat labelPaddingVertical = 8.0;
-    const CGFloat labelPaddingHorizontal = 16.0;
+    const CGFloat labelPaddingHorizontal = 12.0;
 
     _leadingConstraint = [_bubbleView.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:bubbleHorizontal];
     _trailingConstraint = [_bubbleView.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-bubbleHorizontal];
@@ -86,7 +86,7 @@
     _labelTrailingConstraint.active = YES;
     
     self.gradientLayer = [CAGradientLayer layer];
-    self.gradientLayer.cornerRadius = 20.0;
+    self.gradientLayer.cornerRadius = 18.0;
     [_bubbleView.layer insertSublayer:self.gradientLayer atIndex:0];
     
     _readReceiptImageView = [UIImageView new];
@@ -97,7 +97,7 @@
 
     [NSLayoutConstraint activateConstraints:@[
       [_readReceiptImageView.trailingAnchor constraintEqualToAnchor:_bubbleView.trailingAnchor constant:-8.0],
-      [_readReceiptImageView.bottomAnchor constraintEqualToAnchor:_bubbleView.bottomAnchor constant:-12.0],
+      [_readReceiptImageView.bottomAnchor constraintEqualToAnchor:_bubbleView.bottomAnchor constant:-10.0],
       [_readReceiptImageView.widthAnchor constraintEqualToConstant:14.0],
       [_readReceiptImageView.heightAnchor constraintEqualToConstant:14.0],
     ]];
@@ -157,7 +157,7 @@
 
   CGFloat contentWidth = self.contentView.bounds.size.width;
   CGFloat maxBubbleWidth = contentWidth * 0.75;
-  CGFloat labelPaddingHorizontal = 16.0;
+  CGFloat labelPaddingHorizontal = 18.0;
 
   self.label.preferredMaxLayoutWidth =
       maxBubbleWidth - 2 * labelPaddingHorizontal;
@@ -218,7 +218,7 @@
   self.reactionTrailingConstraint.active = !isUser;
   self.reactionTopConstraint.constant = hasReaction ? -6.0 : 0.0;
 
-  self.labelTrailingConstraint.constant = isUser ? -26.0 : -16.0;
+  self.labelTrailingConstraint.constant = isUser ? -26.0 : -18.0;
   self.topConstraint.constant = sameAsPrevious ? 0.0 : 12.0;
 
   [self layoutIfNeeded];
@@ -265,7 +265,7 @@
   imageView.userInteractionEnabled = YES;
   imageView.tag = 0; // Only one image now
   [imageView.heightAnchor constraintEqualToConstant:200.0].active = YES;
-  imageView.layer.cornerRadius = 20.0;
+  imageView.layer.cornerRadius = 18.0;
   imageView.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
 
   UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleImageTap:)];
