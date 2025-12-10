@@ -228,12 +228,10 @@ UIColor *colorFromHex(const std::string &hex) {
         [self applyReadReceiptUpdates:toReconfigure];
       }
     }];
-    // Keep scroll happening alongside cell entrance animations.
     scrollToBottomIfNeeded();
   } else if (hasReadReceiptChanges) {
     self->_messages = std::move(newMessages);
     [self applyReadReceiptUpdates:toReconfigure];
-    scrollToBottomIfNeeded();
   } else {
     _messages = std::move(newMessages);
   }
