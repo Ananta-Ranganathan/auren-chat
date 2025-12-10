@@ -153,11 +153,10 @@
 - (void)layoutSubviews
 {
   [super layoutSubviews];
-  NSLog(@"layoutSubviews bubbleView.bounds: %@", NSStringFromCGRect(_bubbleView.bounds));
 
   CGFloat contentWidth = self.contentView.bounds.size.width;
   CGFloat maxBubbleWidth = contentWidth * 0.75;
-  CGFloat labelPaddingHorizontal = 18.0;
+  CGFloat labelPaddingHorizontal = 12.0;
 
   self.label.preferredMaxLayoutWidth =
       maxBubbleWidth - 2 * labelPaddingHorizontal;
