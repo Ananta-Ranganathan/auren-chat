@@ -186,18 +186,18 @@ UIColor *colorFromHex(const std::string &hex) {
   BOOL hasStructuralChanges = toDelete.count > 0 || toInsert.count > 0 || toReload.count > 0;
   BOOL hasReadReceiptChanges = toReconfigure.count > 0;
 
-  // Helper to keep scroll behavior identical to before.
   auto scrollToBottomIfNeeded = ^{
     if (wasAtBottom && self->_messages.size() > 0) {
-      CGFloat newContentHeight = self->_collectionView.contentSize.height;
-      CGFloat newVisibleHeight = self->_collectionView.bounds.size.height;
-      
-      // Only scroll if content is close to being taller than visible area
-      if (newContentHeight > newVisibleHeight - 100) {
-        UIEdgeInsets newInsets = self->_collectionView.contentInset;
-        CGFloat newBottomOffset = newContentHeight + newInsets.bottom - newVisibleHeight;
-        [self->_collectionView setContentOffset:CGPointMake(0, newBottomOffset) animated:NO];
-      }
+      dispatch_async(dispatch_get_main_queue(), ^{
+        CGFloat newContentHeight = self->_collectionView.contentSize.height;
+        CGFloat newVisibleHeight = self->_collectionView.bounds.size.height;
+        
+        if (newContentHeight > newVisibleHeight - 100) {
+          UIEdgeInsets newInsets = self->_collectionView.contentInset;
+          CGFloat newBottomOffset = newContentHeight + newInsets.bottom - newVisibleHeight;
+          [self->_collectionView setContentOffset:CGPointMake(0, newBottomOffset) animated:YES];
+        }
+      });
     }
   };
 
