@@ -441,7 +441,8 @@ UIColor *colorFromHex(const std::string &hex) {
     
     CGFloat maxBubbleWidth = contentWidth * 0.75;
     CGFloat labelPaddingHorizontal = 16.0;
-    CGFloat labelPaddingVertical = 10.0;
+  CGFloat labelPaddingVertical = 8.0;
+  CGFloat bubbleVertical = 4.0;
     CGFloat maxLabelWidth = maxBubbleWidth - 2 * labelPaddingHorizontal;
     
     CGRect textRect = [text boundingRectWithSize:CGSizeMake(maxLabelWidth, CGFLOAT_MAX)
@@ -453,7 +454,7 @@ UIColor *colorFromHex(const std::string &hex) {
         imageHeight = 200.0;
     }
 
-    CGFloat cellHeight = ceil(textRect.size.height) + 2 * labelPaddingVertical + verticalSpacing + imageHeight;
+  CGFloat cellHeight = ceil(textRect.size.height) + 2 * labelPaddingVertical + bubbleVertical + verticalSpacing + imageHeight;
     
     return CGSizeMake(contentWidth, cellHeight);
   }
