@@ -153,24 +153,32 @@
 - (CGRect)calculateTargetFrameForBubble:(CGRect)originalFrame isUser:(BOOL)isUser
 {
     CGFloat screenHeight = self.bounds.size.height;
-    CGFloat screenWidth = self.bounds.size.width;
     
-    // We need ~60pt above for reactions, ~100pt below for actions
     CGFloat reactionBarHeight = 50.0;
     CGFloat actionStackHeight = 90.0;
-    CGFloat padding = 16.0;
+    CGFloat padding = 12.0;
+    CGFloat safeTop = 50.0;
+    CGFloat safeBottom = 50.0;
     
-    CGFloat totalNeededHeight = originalFrame.size.height + reactionBarHeight + actionStackHeight + padding * 3;
-    
-    // Center vertically, but ensure room for menus
-    CGFloat targetY = (screenHeight - totalNeededHeight) / 2.0 + reactionBarHeight + padding;
-    
-    // Keep horizontal position similar (respect isUser alignment)
+    // Start with original position - only move if necessary
+    CGFloat targetY = originalFrame.origin.y;
     CGFloat targetX = originalFrame.origin.x;
     
-    // Clamp to screen bounds
-    targetY = MAX(reactionBarHeight + padding + 50, targetY); // 50pt from top minimum
-    targetY = MIN(screenHeight - originalFrame.size.height - actionStackHeight - padding - 50, targetY);
+    // Check if reaction bar fits above
+    CGFloat spaceNeededAbove = reactionBarHeight + padding;
+    if (targetY < safeTop + spaceNeededAbove) {
+        targetY = safeTop + spaceNeededAbove;
+    }
+    
+    // Check if action buttons fit below
+    CGFloat bubbleBottom = targetY + originalFrame.size.height;
+    CGFloat spaceNeededBelow = actionStackHeight + padding;
+    if (bubbleBottom + spaceNeededBelow > screenHeight - safeBottom) {
+        targetY = screenHeight - safeBottom - spaceNeededBelow - originalFrame.size.height;
+    }
+    
+    // Final clamp
+    targetY = MAX(safeTop + spaceNeededAbove, targetY);
     
     return CGRectMake(targetX, targetY, originalFrame.size.width, originalFrame.size.height);
 }
