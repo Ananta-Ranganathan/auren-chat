@@ -9,6 +9,7 @@
 
 #import "RCTChatMessageCell.h"
 #import "RCTTypingIndicatorCell.h"
+#import "RCTContextMenuOverlayView.h"
 
 using namespace facebook::react;
 
@@ -324,6 +325,18 @@ UIColor *colorFromHex(const std::string &hex) {
   // If no keys were added, pass nil; otherwise pass an immutable copy
   NSDictionary *finalImageDict = (imageDict.count > 0) ? [imageDict copy] : nil;
   [cell configureWithImage:finalImageDict];
+  
+  NSString *messageUuid = [NSString stringWithUTF8String:msg.uuid.c_str()];
+  NSArray *favoriteEmojis = @[@"❤️", @"😂", @"🤔", @"👍", @"👎", @"❗️"]; // Or from props
+
+  cell.onLongPress = ^(UIView *snapshot, CGRect frame, NSString *text, BOOL isUser) {
+      [self showContextMenuWithSnapshot:snapshot
+                                  frame:frame
+                                   text:text
+                                 isUser:isUser
+                            messageUuid:messageUuid
+                         favoriteEmojis:favoriteEmojis];
+  };
 
   // Set up tap callback to emit event
 //  NSString *messageUuid = [NSString stringWithUTF8String:msg.uuid.c_str()];
@@ -516,6 +529,64 @@ UIColor *colorFromHex(const std::string &hex) {
                         cell.transform = CGAffineTransformIdentity;
                       } completion:nil];
   });
+}
+
+- (void)showContextMenuWithSnapshot:(UIView *)snapshot
+                              frame:(CGRect)frame
+                               text:(NSString *)text
+                             isUser:(BOOL)isUser
+                        messageUuid:(NSString *)messageUuid
+                     favoriteEmojis:(NSArray<NSString *> *)emojis
+{
+    UIWindow *window = self.window;
+    
+    RCTContextMenuOverlayView *overlay = [[RCTContextMenuOverlayView alloc] initWithFrame:window.bounds];
+    
+    overlay.onReply = ^{
+        if (self->_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(self->_eventEmitter);
+            if (emitter) {
+                emitter->onReply({.messageUuid = std::string([messageUuid UTF8String])});
+            }
+        }
+    };
+    
+    overlay.onCopy = ^(NSString *copiedText) {
+        if (self->_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(self->_eventEmitter);
+            if (emitter) {
+                emitter->onCopy({.messageUuid = std::string([messageUuid UTF8String])});
+            }
+        }
+    };
+    
+    overlay.onReactionSelect = ^(NSString *emoji) {
+        if (self->_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(self->_eventEmitter);
+            if (emitter) {
+                emitter->onReactionSelect({
+                    .messageUuid = std::string([messageUuid UTF8String]),
+                    .emoji = std::string([emoji UTF8String])
+                });
+            }
+        }
+    };
+    
+    overlay.onEmojiPickerOpen = ^{
+        if (self->_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(self->_eventEmitter);
+            if (emitter) {
+                emitter->onEmojiPickerOpen({.messageUuid = std::string([messageUuid UTF8String])});
+            }
+        }
+    };
+    
+    [window addSubview:overlay];
+    [overlay showWithBubbleSnapshot:snapshot
+                        bubbleFrame:frame
+                        messageText:text
+                             isUser:isUser
+                     favoriteEmojis:emojis];
 }
 
 - (void)dealloc

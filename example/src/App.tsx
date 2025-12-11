@@ -163,6 +163,18 @@ function AppContent() {
             style={{ flex: 1 }}
             composerHeight={composerHeight}
             onRequestDismissKeyboard={() => Keyboard.dismiss()}
+            onReply={(e) => console.log('onreply', e.nativeEvent.messageUuid)}
+            onCopy={(e) => console.log('oncopy', e.nativeEvent.messageUuid)}
+            onReactionSelect={(e) =>
+              console.log(
+                'onreactionselect',
+                e.nativeEvent.messageUuid,
+                e.nativeEvent.emoji
+              )
+            }
+            onEmojiPickerOpen={(e) =>
+              console.log('onEmojiPickerOpen', e.nativeEvent.messageUuid)
+            }
           />
         </View>
       </View>

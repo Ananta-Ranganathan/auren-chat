@@ -140,6 +140,12 @@
     _reactionTrailingConstraint.active = NO;
 
     _reactionContainer.hidden = YES;
+    
+    UILongPressGestureRecognizer *longPress =
+        [[UILongPressGestureRecognizer alloc] initWithTarget:self
+                                                      action:@selector(handleLongPress:)];
+    longPress.minimumPressDuration = 0.2;
+    [_bubbleView addGestureRecognizer:longPress];
   }
   return self;
 }
@@ -394,6 +400,70 @@
   if (self.onImageTapped) {
     self.onImageTapped(index, frameInWindow);
   }
+}
+
+- (void)handleLongPress:(UILongPressGestureRecognizer *)recognizer
+{
+    static BOOL didTrigger = NO;
+    
+    switch (recognizer.state) {
+        case UIGestureRecognizerStateBegan: {
+            didTrigger = NO;
+            // Shrink animation
+            [UIView animateWithDuration:0.15 animations:^{
+                self.bubbleView.transform = CGAffineTransformMakeScale(0.95, 0.95);
+            }];
+            
+            // Schedule trigger after 400ms total
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), ^{
+                if (recognizer.state == UIGestureRecognizerStateChanged ||
+                    recognizer.state == UIGestureRecognizerStateBegan) {
+                    didTrigger = YES;
+                    [self triggerContextMenu];
+                }
+            });
+            break;
+        }
+        case UIGestureRecognizerStateEnded: {
+            if (!didTrigger) {
+                // Reset if released too early
+                [UIView animateWithDuration:0.15 animations:^{
+                    self.bubbleView.transform = CGAffineTransformIdentity;
+                }];
+            }
+            break;
+        }
+        case UIGestureRecognizerStateCancelled:
+        case UIGestureRecognizerStateFailed: {
+            [UIView animateWithDuration:0.15 animations:^{
+                self.bubbleView.transform = CGAffineTransformIdentity;
+            }];
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+- (void)triggerContextMenu
+{
+    // Reset transform before snapshot
+    self.bubbleView.transform = CGAffineTransformIdentity;
+    
+    // Create snapshot
+    UIView *snapshot = [self.bubbleView snapshotViewAfterScreenUpdates:YES];
+    
+    // Get frame in window
+    UIWindow *window = self.window;
+    CGRect frameInWindow = [self.bubbleView convertRect:self.bubbleView.bounds toView:window];
+//  self.bubbleView.hidden = YES;
+
+    
+    // Call the callback
+    if (self.onLongPress) {
+        self.onLongPress(snapshot, frameInWindow, self.label.text, /* need isUser */ NO);
+    }
 }
 
 @end

@@ -28,6 +28,13 @@ export interface NativeProps extends ViewProps {
   theme: ThemeConfiguration;
   composerHeight: CodegenTypes.Double;
   onRequestDismissKeyboard?: CodegenTypes.DirectEventHandler<null>;
+  onReply: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
+  onCopy: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
+  onReactionSelect: CodegenTypes.DirectEventHandler<{
+    messageUuid: string;
+    emoji: string;
+  }>;
+  onEmojiPickerOpen: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
 }
 
 export default codegenNativeComponent<NativeProps>(
