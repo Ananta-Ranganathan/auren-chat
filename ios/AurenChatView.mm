@@ -127,15 +127,17 @@ UIColor *colorFromHex(const std::string &hex) {
     CGFloat delta = composerHeight - _composerHeight;
     _composerHeight = composerHeight;
     
-    UIEdgeInsets newInsets = _collectionView.contentInset;
-    newInsets.bottom = _keyboardBottomInset + composerHeight;
-    _collectionView.contentInset = newInsets;
-    _collectionView.verticalScrollIndicatorInsets = newInsets;
-    
-    if (delta > 0) {
-        CGPoint offset = _collectionView.contentOffset;
-        offset.y += delta;
-        _collectionView.contentOffset = offset;
+    if (!_contextMenuActive) {
+      UIEdgeInsets newInsets = _collectionView.contentInset;
+      newInsets.bottom = _keyboardBottomInset + composerHeight;
+      _collectionView.contentInset = newInsets;
+      _collectionView.verticalScrollIndicatorInsets = newInsets;
+      
+      if (delta > 0) {
+          CGPoint offset = _collectionView.contentOffset;
+          offset.y += delta;
+          _collectionView.contentOffset = offset;
+      }
     }
   }
   
