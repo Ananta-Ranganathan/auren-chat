@@ -32,8 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSLayoutConstraint *reactionLeadingConstraint;
 @property (nonatomic, strong) NSLayoutConstraint *reactionTrailingConstraint;
 @property (nonatomic, strong) NSLayoutConstraint *reactionTopConstraint;
-@property (nonatomic, copy) void (^onLongPress)(UIView *bubbleSnapshot, CGRect frameInWindow, NSString *text, BOOL isUser);
-
+@property (nonatomic, copy) void (^onLongPress)(UIView *snapshot, CGRect frame, NSString *text, BOOL isUser, UIView *bubbleView);
 
 - (void)configureWithText:(NSString *)text isUser:(BOOL)isUser sameAsPrevious:(BOOL)sameAsPrevious readByCharacterAt:(double)readByCharacterAt gradientStart:(UIColor*)gradientStart gradientEnd:(UIColor*)gradientEnd reaction:(NSString *)reaction themeColor:(UIColor *)themeColor;
 - (void)configureWithImage:(NSDictionary * _Nullable)image;

@@ -329,13 +329,14 @@ UIColor *colorFromHex(const std::string &hex) {
   NSString *messageUuid = [NSString stringWithUTF8String:msg.uuid.c_str()];
   NSArray *favoriteEmojis = @[@"❤️", @"😂", @"🤔", @"👍", @"👎", @"❗️"]; // Or from props
 
-  cell.onLongPress = ^(UIView *snapshot, CGRect frame, NSString *text, BOOL isUser) {
+  cell.onLongPress = ^(UIView *snapshot, CGRect frame, NSString *text, BOOL isUser, UIView *bubbleView) {
       [self showContextMenuWithSnapshot:snapshot
                                   frame:frame
                                    text:text
                                  isUser:isUser
                             messageUuid:messageUuid
-                         favoriteEmojis:favoriteEmojis];
+                         favoriteEmojis:favoriteEmojis
+                             bubbleView:bubbleView];
   };
 
   // Set up tap callback to emit event
@@ -537,10 +538,15 @@ UIColor *colorFromHex(const std::string &hex) {
                              isUser:(BOOL)isUser
                         messageUuid:(NSString *)messageUuid
                      favoriteEmojis:(NSArray<NSString *> *)emojis
+                         bubbleView:(UIView *)bubbleView
 {
     UIWindow *window = self.window;
     
     RCTContextMenuOverlayView *overlay = [[RCTContextMenuOverlayView alloc] initWithFrame:window.bounds];
+  
+    overlay.onToggleOriginalBubble = ^(BOOL hidden) {
+        bubbleView.hidden = hidden;
+    };
     
     overlay.onReply = ^{
         if (self->_eventEmitter) {
@@ -582,11 +588,18 @@ UIColor *colorFromHex(const std::string &hex) {
     };
     
     [window addSubview:overlay];
+    CGFloat r = 0, g = 0, b = 0, a = 0;
+    BOOL isDarkMode = NO;
+    if ([_themeBaseColor getRed:&r green:&g blue:&b alpha:&a]) {
+        isDarkMode = (r < 0.1 && g < 0.1 && b < 0.1);
+    }
+
     [overlay showWithBubbleSnapshot:snapshot
                         bubbleFrame:frame
                         messageText:text
                              isUser:isUser
-                     favoriteEmojis:emojis];
+                     favoriteEmojis:emojis
+                         isDarkMode:isDarkMode];
 }
 
 - (void)dealloc

@@ -15,7 +15,8 @@
 @property (nonatomic, strong) UIStackView *actionStack;
 @property (nonatomic, copy) NSString *messageText;
 @property (nonatomic, assign) CGRect originalFrame;
-@property (nonatomic, assign) bool _isUser;
+@property (nonatomic, assign) BOOL isUser;
+@property (nonatomic, assign) BOOL isDarkMode;
 
 @end
 
@@ -66,10 +67,14 @@
                    messageText:(NSString *)text
                         isUser:(BOOL)isUser
                 favoriteEmojis:(NSArray<NSString *> *)emojis
+                    isDarkMode:(BOOL)isDarkMode
 {
     _messageText = text;
     _originalFrame = frameInWindow;
-    self._isUser = isUser; // Store this as a property
+    _isUser = isUser;
+    _isDarkMode = isDarkMode;
+  
+    if (_onToggleOriginalBubble) _onToggleOriginalBubble(YES);
     
     // 1. Add snapshot at its original position
     _snapshotContainer = [[UIView alloc] initWithFrame:frameInWindow];
@@ -112,7 +117,7 @@
                         options:UIViewAnimationOptionCurveEaseOut
                      animations:^{
         // Blur in
-        self.blurView.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        self.blurView.effect = [UIBlurEffect effectWithStyle:isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterialLight];
         
         // Move snapshot to target position
         self.snapshotContainer.frame = targetBubbleFrame;
@@ -175,7 +180,7 @@
 - (void)createReactionBarWithEmojis:(NSArray<NSString *> *)emojis isUser:(BOOL)isUser
 {
     _reactionBar = [[UIView alloc] init];
-    _reactionBar.backgroundColor = [[UIColor systemBackgroundColor] colorWithAlphaComponent:0.9];
+    _reactionBar.backgroundColor = [(_isDarkMode ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor whiteColor]) colorWithAlphaComponent:0.95];
     _reactionBar.layer.cornerRadius = 25.0;
     _reactionBar.layer.shadowColor = [UIColor blackColor].CGColor;
     _reactionBar.layer.shadowOpacity = 0.15;
@@ -297,13 +302,14 @@
     [btn setImage:icon forState:UIControlStateNormal];
     [btn setTitle:[NSString stringWithFormat:@"  %@", title] forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
-    [btn setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
-    [btn setTintColor:[UIColor labelColor]];
-    
-    btn.backgroundColor = [[UIColor systemBackgroundColor] colorWithAlphaComponent:0.95];
+    UIColor *textColor = _isDarkMode ? [UIColor whiteColor] : [UIColor blackColor];
+    [btn setTitleColor:textColor forState:UIControlStateNormal];
+    [btn setTintColor:textColor];
+
+    btn.backgroundColor = [(_isDarkMode ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor whiteColor]) colorWithAlphaComponent:0.95];
     btn.layer.cornerRadius = 12.0;
-  btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
-  [btn.heightAnchor constraintEqualToConstant:48.0].active = YES;
+    btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+    [btn.heightAnchor constraintEqualToConstant:48.0].active = YES;
     
     btn.layer.shadowColor = [UIColor blackColor].CGColor;
     btn.layer.shadowOpacity = 0.12;
@@ -393,11 +399,12 @@
         self.snapshotContainer.frame = self.originalFrame;
         
     } completion:^(BOOL finished) {
-        [self removeFromSuperview];
-        if (self.onDismiss) {
-            self.onDismiss();
-        }
-    }];
+      if (self.onToggleOriginalBubble) self.onToggleOriginalBubble(NO);
+      [self removeFromSuperview];
+      if (self.onDismiss) {
+          self.onDismiss();
+      }
+    }]; 
 }
 
 @end

@@ -457,12 +457,11 @@
     // Get frame in window
     UIWindow *window = self.window;
     CGRect frameInWindow = [self.bubbleView convertRect:self.bubbleView.bounds toView:window];
-//  self.bubbleView.hidden = YES;
 
     
     // Call the callback
     if (self.onLongPress) {
-        self.onLongPress(snapshot, frameInWindow, self.label.text, /* need isUser */ NO);
+        self.onLongPress(snapshot, frameInWindow, self.label.text, NO, self.bubbleView);
     }
 }
 

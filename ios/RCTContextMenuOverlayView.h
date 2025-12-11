@@ -16,12 +16,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void (^onReactionSelect)(NSString *emoji);
 @property (nonatomic, copy) void (^onEmojiPickerOpen)(void);
 @property (nonatomic, copy) void (^onDismiss)(void);
+@property (nonatomic, copy) void (^onToggleOriginalBubble)(BOOL hidden);
 
 - (void)showWithBubbleSnapshot:(UIView *)snapshot
                     bubbleFrame:(CGRect)frameInWindow
                     messageText:(NSString *)text
-                       isUser:(BOOL)isUser
-                 favoriteEmojis:(NSArray<NSString *> *)emojis;
+                    isUser:(BOOL)isUser
+                    favoriteEmojis:(NSArray<NSString *> *)emojis
+                    isDarkMode:(BOOL)isDarkMode;
 
 - (void)dismiss;
 
