@@ -283,46 +283,89 @@
 
 - (void)createActionButtonsWithIsUser:(BOOL)isUser
 {
-    _actionStack = [[UIStackView alloc] init];
-    _actionStack.axis = UILayoutConstraintAxisVertical;
-    _actionStack.spacing = 8.0;
-    _actionStack.alignment = UIStackViewAlignmentFill;
+    // Container styled like UIMenu
+    UIView *menuCard = [[UIView alloc] init];
+    menuCard.backgroundColor = _isDarkMode ? [UIColor colorWithWhite:0.2 alpha:1.0] : [UIColor whiteColor];
+    menuCard.layer.cornerRadius = 14.0;
+    menuCard.layer.shadowColor = [UIColor blackColor].CGColor;
+    menuCard.layer.shadowOpacity = 0.15;
+    menuCard.layer.shadowOffset = CGSizeMake(0, 2);
+    menuCard.layer.shadowRadius = 8.0;
+    menuCard.translatesAutoresizingMaskIntoConstraints = NO;
     
-    UIButton *replyBtn = [self createActionButton:@"Reply" icon:@"arrowshape.turn.up.left.fill"];
+    // Reply row
+    UIButton *replyBtn = [self createMenuRowButton:@"Reply" icon:@"arrowshape.turn.up.left"];
     [replyBtn addTarget:self action:@selector(handleReply) forControlEvents:UIControlEventTouchUpInside];
     
-    UIButton *copyBtn = [self createActionButton:@"Copy" icon:@"doc.on.doc.fill"];
+    // Separator
+    UIView *separator = [[UIView alloc] init];
+    separator.backgroundColor = _isDarkMode ? [UIColor colorWithWhite:0.35 alpha:1.0] : [UIColor colorWithWhite:0.85 alpha:1.0];
+    separator.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    // Copy row
+    UIButton *copyBtn = [self createMenuRowButton:@"Copy" icon:@"doc.on.doc"];
     [copyBtn addTarget:self action:@selector(handleCopy) forControlEvents:UIControlEventTouchUpInside];
     
-    [_actionStack addArrangedSubview:replyBtn];
-    [_actionStack addArrangedSubview:copyBtn];
+    [menuCard addSubview:replyBtn];
+    [menuCard addSubview:separator];
+    [menuCard addSubview:copyBtn];
+    
+    [NSLayoutConstraint activateConstraints:@[
+        [replyBtn.topAnchor constraintEqualToAnchor:menuCard.topAnchor],
+        [replyBtn.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor],
+        [replyBtn.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [replyBtn.heightAnchor constraintEqualToConstant:44.0],
+        
+        [separator.topAnchor constraintEqualToAnchor:replyBtn.bottomAnchor],
+        [separator.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor constant:16.0],
+        [separator.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [separator.heightAnchor constraintEqualToConstant:0.5],
+        
+        [copyBtn.topAnchor constraintEqualToAnchor:separator.bottomAnchor],
+        [copyBtn.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor],
+        [copyBtn.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [copyBtn.heightAnchor constraintEqualToConstant:44.0],
+        [copyBtn.bottomAnchor constraintEqualToAnchor:menuCard.bottomAnchor],
+    ]];
+    
+    // Wrap in stack for existing positioning logic
+    _actionStack = [[UIStackView alloc] init];
+    _actionStack.translatesAutoresizingMaskIntoConstraints = YES;
+    [_actionStack addArrangedSubview:menuCard];
     
     [self addSubview:_actionStack];
 }
 
-- (UIButton *)createActionButton:(NSString *)title icon:(NSString *)iconName
+- (UIButton *)createMenuRowButton:(NSString *)title icon:(NSString *)iconName
 {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    btn.translatesAutoresizingMaskIntoConstraints = NO;
     
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
-    UIImage *icon = [UIImage systemImageNamed:iconName withConfiguration:config];
-    
-    [btn setImage:icon forState:UIControlStateNormal];
-    [btn setTitle:[NSString stringWithFormat:@"  %@", title] forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
     UIColor *textColor = _isDarkMode ? [UIColor whiteColor] : [UIColor blackColor];
-    [btn setTitleColor:textColor forState:UIControlStateNormal];
     [btn setTintColor:textColor];
-
-    btn.backgroundColor = [(_isDarkMode ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor whiteColor]) colorWithAlphaComponent:0.95];
-    btn.layer.cornerRadius = 12.0;
-    btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
-    [btn.heightAnchor constraintEqualToConstant:48.0].active = YES;
     
-    btn.layer.shadowColor = [UIColor blackColor].CGColor;
-    btn.layer.shadowOpacity = 0.12;
-    btn.layer.shadowOffset = CGSizeMake(0, 2);
-    btn.layer.shadowRadius = 6.0;
+    // Create a configuration for proper layout
+    UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
+    config.title = title;
+    config.baseForegroundColor = textColor;
+    
+    UIImageSymbolConfiguration *imgConfig = [UIImageSymbolConfiguration configurationWithPointSize:17 weight:UIImageSymbolWeightRegular];
+    config.image = [UIImage systemImageNamed:iconName withConfiguration:imgConfig];
+    
+    // Title on left, image on right, with space between
+    config.imagePlacement = NSDirectionalRectEdgeTrailing;
+    config.imagePadding = 0;  // Space between title and image
+    config.contentInsets = NSDirectionalEdgeInsetsMake(0, 16, 0, 16);
+    
+    btn.configuration = config;
+    btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentFill;
+    
+    // This makes the title left-align and icon right-align
+    btn.configurationUpdateHandler = ^(UIButton *button) {
+        UIButtonConfiguration *updatedConfig = button.configuration;
+        updatedConfig.titleAlignment = UIButtonConfigurationTitleAlignmentLeading;
+        button.configuration = updatedConfig;
+    };
     
     return btn;
 }
@@ -347,28 +390,21 @@
 - (CGRect)actionStackFrameForBubbleFrame:(CGRect)bubbleFrame isUser:(BOOL)isUser
 {
     CGFloat padding = 12.0;
-    CGFloat buttonWidth = 140.0;
+    CGFloat menuWidth = 150.0;  // UIMenu-like width
+    CGFloat menuHeight = 88.5;  // 2 rows × 44 + separator
     
     CGFloat x;
     if (isUser) {
-        // Align to right edge of bubble
-        x = CGRectGetMaxX(bubbleFrame) - buttonWidth;
+        x = CGRectGetMaxX(bubbleFrame) - menuWidth;
     } else {
-        // Align to left edge of bubble
         x = bubbleFrame.origin.x;
     }
     
-    // Clamp to screen
-    x = MAX(16, MIN(self.bounds.size.width - buttonWidth - 16, x));
-    
+    x = MAX(16, MIN(self.bounds.size.width - menuWidth - 16, x));
     CGFloat y = CGRectGetMaxY(bubbleFrame) + padding;
     
-    // Height for 2 buttons + spacing
-    CGFloat height = 2 * 48.0 + 8.0;
-    
-    return CGRectMake(x, y, buttonWidth, height);
+    return CGRectMake(x, y, menuWidth, menuHeight);
 }
-
 #pragma mark - Dismiss
 
 - (void)dismiss
