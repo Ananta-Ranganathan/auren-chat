@@ -15,6 +15,7 @@
 @property (nonatomic, strong) UIStackView *actionStack;
 @property (nonatomic, copy) NSString *messageText;
 @property (nonatomic, assign) CGRect originalFrame;
+@property (nonatomic, assign) bool _isUser;
 
 @end
 
@@ -68,6 +69,7 @@
 {
     _messageText = text;
     _originalFrame = frameInWindow;
+    self._isUser = isUser; // Store this as a property
     
     // 1. Add snapshot at its original position
     _snapshotContainer = [[UIView alloc] initWithFrame:frameInWindow];
@@ -75,36 +77,71 @@
     snapshot.frame = _snapshotContainer.bounds;
     [self addSubview:_snapshotContainer];
     
-    // 2. Create reaction bar
+    // 2. Create reaction bar and action buttons
     [self createReactionBarWithEmojis:emojis isUser:isUser];
-    
-    // 3. Create action buttons
     [self createActionButtonsWithIsUser:isUser];
     
-    // 4. Calculate target position (centered vertically with room for menus)
-    CGRect targetFrame = [self calculateTargetFrameForBubble:frameInWindow isUser:isUser];
+    // 3. Calculate final positions
+    CGRect targetBubbleFrame = [self calculateTargetFrameForBubble:frameInWindow isUser:isUser];
+    CGRect finalReactionFrame = [self reactionBarFrameForBubbleFrame:targetBubbleFrame isUser:isUser];
+    CGRect finalActionFrame = [self actionStackFrameForBubbleFrame:targetBubbleFrame isUser:isUser];
     
-    // 5. Animate everything in
-    [UIView animateWithDuration:0.3
+    // 4. Set initial state - menus start at bubble center, scaled down
+    CGPoint bubbleCenter = CGPointMake(CGRectGetMidX(frameInWindow), CGRectGetMidY(frameInWindow));
+    
+    // Size the frames first so we know their dimensions
+    _reactionBar.frame = finalReactionFrame;
+    _actionStack.frame = finalActionFrame;
+    [_reactionBar layoutIfNeeded];
+    [_actionStack layoutIfNeeded];
+    
+    // Now position at bubble center with scale 0
+    _reactionBar.center = bubbleCenter;
+    _reactionBar.transform = CGAffineTransformMakeScale(0.01, 0.01);
+    _reactionBar.alpha = 0.0;
+    
+    _actionStack.center = bubbleCenter;
+    _actionStack.transform = CGAffineTransformMakeScale(0.01, 0.01);
+    _actionStack.alpha = 0.0;
+    
+    // 5. Animate everything
+    [UIView animateWithDuration:0.4
                           delay:0
-         usingSpringWithDamping:0.8
+         usingSpringWithDamping:0.75
           initialSpringVelocity:0.5
                         options:UIViewAnimationOptionCurveEaseOut
                      animations:^{
         // Blur in
         self.blurView.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
         
-        // Move snapshot to target
-        self.snapshotContainer.frame = targetFrame;
+        // Move snapshot to target position
+        self.snapshotContainer.frame = targetBubbleFrame;
         
-        // Position and fade in reaction bar (above bubble)
+    } completion:nil];
+    
+    // Stagger the menus slightly for a nicer feel
+    [UIView animateWithDuration:0.45
+                          delay:0.05
+         usingSpringWithDamping:0.7
+          initialSpringVelocity:0.8
+                        options:UIViewAnimationOptionCurveEaseOut
+                     animations:^{
+        // Reaction bar pops out and moves up
+        self.reactionBar.transform = CGAffineTransformIdentity;
+        self.reactionBar.frame = finalReactionFrame;
         self.reactionBar.alpha = 1.0;
-        self.reactionBar.frame = [self reactionBarFrameForBubbleFrame:targetFrame isUser:isUser];
-        
-        // Position and fade in action buttons (below bubble)
+    } completion:nil];
+    
+    [UIView animateWithDuration:0.45
+                          delay:0.08
+         usingSpringWithDamping:0.7
+          initialSpringVelocity:0.8
+                        options:UIViewAnimationOptionCurveEaseOut
+                     animations:^{
+        // Action buttons pop out and move down
+        self.actionStack.transform = CGAffineTransformIdentity;
+        self.actionStack.frame = finalActionFrame;
         self.actionStack.alpha = 1.0;
-        self.actionStack.frame = [self actionStackFrameForBubbleFrame:targetFrame isUser:isUser];
-        
     } completion:nil];
 }
 
@@ -234,10 +271,9 @@
 - (void)createActionButtonsWithIsUser:(BOOL)isUser
 {
     _actionStack = [[UIStackView alloc] init];
-    _actionStack.axis = UILayoutConstraintAxisHorizontal;
-    _actionStack.spacing = 12.0;
-    _actionStack.alignment = UIStackViewAlignmentCenter;
-    _actionStack.alpha = 0.0;
+    _actionStack.axis = UILayoutConstraintAxisVertical;
+    _actionStack.spacing = 8.0;
+    _actionStack.alignment = UIStackViewAlignmentFill;
     
     UIButton *replyBtn = [self createActionButton:@"Reply" icon:@"arrowshape.turn.up.left.fill"];
     [replyBtn addTarget:self action:@selector(handleReply) forControlEvents:UIControlEventTouchUpInside];
@@ -255,23 +291,24 @@
 {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
     UIImage *icon = [UIImage systemImageNamed:iconName withConfiguration:config];
     
     [btn setImage:icon forState:UIControlStateNormal];
-    [btn setTitle:[NSString stringWithFormat:@" %@", title] forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    [btn setTitle:[NSString stringWithFormat:@"  %@", title] forState:UIControlStateNormal];
+    btn.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
     [btn setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
     [btn setTintColor:[UIColor labelColor]];
     
-    btn.backgroundColor = [[UIColor systemBackgroundColor] colorWithAlphaComponent:0.9];
-    btn.layer.cornerRadius = 22.0;
-    btn.contentEdgeInsets = UIEdgeInsetsMake(12, 20, 12, 20);
+    btn.backgroundColor = [[UIColor systemBackgroundColor] colorWithAlphaComponent:0.95];
+    btn.layer.cornerRadius = 12.0;
+  btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+  [btn.heightAnchor constraintEqualToConstant:48.0].active = YES;
     
     btn.layer.shadowColor = [UIColor blackColor].CGColor;
-    btn.layer.shadowOpacity = 0.15;
+    btn.layer.shadowOpacity = 0.12;
     btn.layer.shadowOffset = CGSizeMake(0, 2);
-    btn.layer.shadowRadius = 8.0;
+    btn.layer.shadowRadius = 6.0;
     
     return btn;
 }
@@ -295,32 +332,58 @@
 
 - (CGRect)actionStackFrameForBubbleFrame:(CGRect)bubbleFrame isUser:(BOOL)isUser
 {
-    CGFloat padding = 16.0;
-    
-    // Size to fit
-    [_actionStack layoutIfNeeded];
-    CGSize size = [_actionStack systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+    CGFloat padding = 12.0;
+    CGFloat buttonWidth = 140.0;
     
     CGFloat x;
     if (isUser) {
-        x = CGRectGetMaxX(bubbleFrame) - size.width;
+        // Align to right edge of bubble
+        x = CGRectGetMaxX(bubbleFrame) - buttonWidth;
     } else {
+        // Align to left edge of bubble
         x = bubbleFrame.origin.x;
     }
     
+    // Clamp to screen
+    x = MAX(16, MIN(self.bounds.size.width - buttonWidth - 16, x));
+    
     CGFloat y = CGRectGetMaxY(bubbleFrame) + padding;
     
-    return CGRectMake(x, y, size.width, size.height);
+    // Height for 2 buttons + spacing
+    CGFloat height = 2 * 48.0 + 8.0;
+    
+    return CGRectMake(x, y, buttonWidth, height);
 }
 
 #pragma mark - Dismiss
 
 - (void)dismiss
 {
+    // Calculate where the bubble center will be when it returns
+    CGPoint originalCenter = CGPointMake(CGRectGetMidX(_originalFrame), CGRectGetMidY(_originalFrame));
+    
+    // Animate menus back into the bubble first
     [UIView animateWithDuration:0.25
                           delay:0
          usingSpringWithDamping:0.9
-          initialSpringVelocity:0.5
+          initialSpringVelocity:0.3
+                        options:UIViewAnimationOptionCurveEaseIn
+                     animations:^{
+        // Menus scale down and move toward bubble center
+        self.reactionBar.transform = CGAffineTransformMakeScale(0.01, 0.01);
+        self.reactionBar.center = originalCenter;
+        self.reactionBar.alpha = 0.0;
+        
+        self.actionStack.transform = CGAffineTransformMakeScale(0.01, 0.01);
+        self.actionStack.center = originalCenter;
+        self.actionStack.alpha = 0.0;
+    } completion:nil];
+    
+    // Animate snapshot back and blur out
+    [UIView animateWithDuration:0.3
+                          delay:0.05
+         usingSpringWithDamping:0.85
+          initialSpringVelocity:0.3
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
         // Blur out
@@ -328,10 +391,6 @@
         
         // Move snapshot back to original position
         self.snapshotContainer.frame = self.originalFrame;
-        
-        // Fade out menus
-        self.reactionBar.alpha = 0.0;
-        self.actionStack.alpha = 0.0;
         
     } completion:^(BOOL finished) {
         [self removeFromSuperview];
