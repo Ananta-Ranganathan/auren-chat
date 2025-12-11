@@ -7,7 +7,7 @@ import {
   LayoutAnimation,
 } from 'react-native';
 import { AurenChatView, type Message } from 'react-native-auren-chat';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const gradientThemes = {
   // Row 1 - Warm and red/pink
@@ -144,6 +144,8 @@ function AppContent() {
       hide.remove();
     };
   }, []);
+
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
   return (
     <>
       <View style={[StyleSheet.absoluteFill, styles.container]}>
@@ -163,7 +165,12 @@ function AppContent() {
             style={{ flex: 1 }}
             composerHeight={composerHeight}
             onRequestDismissKeyboard={() => Keyboard.dismiss()}
-            onReply={(e) => console.log('onreply', e.nativeEvent.messageUuid)}
+            onReply={(e) => {
+              console.log('onreply', e.nativeEvent.messageUuid);
+              setTimeout(() => {
+                inputRef?.current?.focus();
+              }, 500);
+            }}
             onCopy={(e) => console.log('oncopy', e.nativeEvent.messageUuid)}
             onReactionSelect={(e) =>
               console.log(
@@ -175,6 +182,12 @@ function AppContent() {
             onEmojiPickerOpen={(e) =>
               console.log('onEmojiPickerOpen', e.nativeEvent.messageUuid)
             }
+            onContextMenuDismiss={(e) => {
+              console.log(e.nativeEvent.shouldRefocusComposer);
+              if (e.nativeEvent.shouldRefocusComposer) {
+                inputRef?.current?.focus();
+              }
+            }}
           />
         </View>
       </View>
@@ -195,6 +208,7 @@ function AppContent() {
           }}
         >
           <TextInput
+            ref={inputRef}
             style={styles.input}
             placeholder="Tap here to type"
             placeholderTextColor="#666"

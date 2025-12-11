@@ -27,6 +27,8 @@ using namespace facebook::react;
   UIColor *_botGradientEnd;
   UIColor *_themeBaseColor;
   CGFloat _composerHeight;
+  BOOL _contextMenuActive;
+  BOOL _keyboardWasVisible;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider
@@ -361,6 +363,9 @@ UIColor *colorFromHex(const std::string &hex) {
 }
 - (void)handleKeyboardNotification:(NSNotification *)notification
 {
+  if (_contextMenuActive) {
+    return;
+  }
   NSDictionary *userInfo = notification.userInfo;
   if (!userInfo) {
     return;
@@ -425,6 +430,7 @@ UIColor *colorFromHex(const std::string &hex) {
                       options:curve
                    animations:^{
                        self->_keyboardBottomInset = newBottomInset;
+                       self->_keyboardWasVisible = (newBottomInset > 0);
                        self->_collectionView.contentInset = newContentInsets;
                        self->_collectionView.verticalScrollIndicatorInsets = newIndicatorInsets;
                        self->_collectionView.contentOffset = newOffset;
@@ -586,7 +592,24 @@ UIColor *colorFromHex(const std::string &hex) {
             }
         }
     };
-    
+  
+
+    BOOL hadKeyboard = _keyboardWasVisible;
+    _contextMenuActive = YES;
+    overlay.onDismiss = ^{
+        self->_contextMenuActive = NO;
+        if (self->_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(self->_eventEmitter);
+            if (emitter) {
+                emitter->onContextMenuDismiss({.shouldRefocusComposer = hadKeyboard});
+            }
+        }
+    };
+    auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(_eventEmitter);
+    if (emitter) {
+        emitter->onRequestDismissKeyboard({});
+    }
+  
     [window addSubview:overlay];
     CGFloat r = 0, g = 0, b = 0, a = 0;
     BOOL isDarkMode = NO;

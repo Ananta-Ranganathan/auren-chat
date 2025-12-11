@@ -35,6 +35,9 @@ export interface NativeProps extends ViewProps {
     emoji: string;
   }>;
   onEmojiPickerOpen: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
+  onContextMenuDismiss: CodegenTypes.DirectEventHandler<{
+    shouldRefocusComposer: boolean;
+  }>;
 }
 
 export default codegenNativeComponent<NativeProps>(
