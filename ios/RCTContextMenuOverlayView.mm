@@ -83,7 +83,9 @@
     [self addSubview:_snapshotContainer];
     
     // 2. Create reaction bar and action buttons
-    [self createReactionBarWithEmojis:emojis isUser:isUser];
+    if (!isUser) {
+        [self createReactionBarWithEmojis:emojis isUser:isUser];
+    }
     [self createActionButtonsWithIsUser:isUser];
     
     // 3. Calculate final positions
@@ -91,23 +93,29 @@
     CGRect finalReactionFrame = [self reactionBarFrameForBubbleFrame:targetBubbleFrame isUser:isUser];
     CGRect finalActionFrame = [self actionStackFrameForBubbleFrame:targetBubbleFrame isUser:isUser];
     
-    // 4. Set initial state - menus start at bubble center, scaled down
-    CGPoint bubbleCenter = CGPointMake(CGRectGetMidX(frameInWindow), CGRectGetMidY(frameInWindow));
     
     // Size the frames first so we know their dimensions
     _reactionBar.frame = finalReactionFrame;
     _actionStack.frame = finalActionFrame;
     [_reactionBar layoutIfNeeded];
     [_actionStack layoutIfNeeded];
+  // Reaction bar: anchor at bottom center (it expands upward from below the bubble)
+  _reactionBar.layer.anchorPoint = CGPointMake(0.5, 1.0);
+  // Action stack: anchor at top center (it expands downward from above the bubble)
+  _actionStack.layer.anchorPoint = CGPointMake(0.5, 0.0);
     
-    // Now position at bubble center with scale 0
-    _reactionBar.center = bubbleCenter;
-    _reactionBar.transform = CGAffineTransformMakeScale(0.01, 0.01);
-    _reactionBar.alpha = 0.0;
-    
-    _actionStack.center = bubbleCenter;
-    _actionStack.transform = CGAffineTransformMakeScale(0.01, 0.01);
-    _actionStack.alpha = 0.0;
+  // Position at final X but at bubble edge Y, scaled to zero height
+  _reactionBar.frame = CGRectMake(finalReactionFrame.origin.x,
+                                   CGRectGetMinY(frameInWindow),  // Top edge of bubble
+                                   finalReactionFrame.size.width,
+                                   finalReactionFrame.size.height);
+  _reactionBar.transform = CGAffineTransformMakeScale(1.0, 0.01);  // Only scale Y
+
+  _actionStack.frame = CGRectMake(finalActionFrame.origin.x,
+                                   CGRectGetMaxY(frameInWindow),  // Bottom edge of bubble
+                                   finalActionFrame.size.width,
+                                   finalActionFrame.size.height);
+  _actionStack.transform = CGAffineTransformMakeScale(1.0, 0.01);  // Only scale Y
     
     // 5. Animate everything
     [UIView animateWithDuration:0.4
@@ -188,7 +196,17 @@
 - (void)createReactionBarWithEmojis:(NSArray<NSString *> *)emojis isUser:(BOOL)isUser
 {
     _reactionBar = [[UIView alloc] init];
-    _reactionBar.backgroundColor = [(_isDarkMode ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor whiteColor]) colorWithAlphaComponent:0.95];
+  if (@available(iOS 26.0, *)) {
+      _reactionBar.backgroundColor = [UIColor clearColor];
+      UIVisualEffectView *glassView = [[UIVisualEffectView alloc] initWithEffect:[[UIGlassEffect alloc] init]];
+      glassView.frame = _reactionBar.bounds;
+      glassView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+      glassView.layer.cornerRadius = 25.0;
+      glassView.clipsToBounds = YES;
+      [_reactionBar insertSubview:glassView atIndex:0];
+  } else {
+      _reactionBar.backgroundColor = [(_isDarkMode ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor whiteColor]) colorWithAlphaComponent:0.95];
+  }
     _reactionBar.layer.cornerRadius = 25.0;
     _reactionBar.layer.shadowColor = [UIColor blackColor].CGColor;
     _reactionBar.layer.shadowOpacity = 0.15;
@@ -283,14 +301,31 @@
 
 - (void)createActionButtonsWithIsUser:(BOOL)isUser
 {
-    // Container styled like UIMenu
-    UIView *menuCard = [[UIView alloc] init];
-    menuCard.backgroundColor = _isDarkMode ? [UIColor colorWithWhite:0.2 alpha:1.0] : [UIColor whiteColor];
-    menuCard.layer.cornerRadius = 14.0;
-    menuCard.layer.shadowColor = [UIColor blackColor].CGColor;
-    menuCard.layer.shadowOpacity = 0.15;
-    menuCard.layer.shadowOffset = CGSizeMake(0, 2);
-    menuCard.layer.shadowRadius = 8.0;
+    UIView *menuCard;
+    UIView *contentContainer;
+    
+  if (@available(iOS 26.0, *)) {
+      menuCard = [[UIView alloc] init];
+      menuCard.backgroundColor = [UIColor clearColor];
+      
+      UIVisualEffectView *glassView = [[UIVisualEffectView alloc] initWithEffect:[[UIGlassEffect alloc] init]];
+      glassView.frame = menuCard.bounds;
+      glassView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+      glassView.layer.cornerRadius = 14.0;
+      glassView.clipsToBounds = YES;
+      [menuCard addSubview:glassView];
+      
+      contentContainer = menuCard;  // Add buttons directly to menuCard, on top of glass
+  } else {
+      menuCard = [[UIView alloc] init];
+      menuCard.backgroundColor = _isDarkMode ? [UIColor colorWithWhite:0.2 alpha:1.0] : [UIColor whiteColor];
+      menuCard.layer.cornerRadius = 14.0;
+      menuCard.layer.shadowColor = [UIColor blackColor].CGColor;
+      menuCard.layer.shadowOpacity = 0.15;
+      menuCard.layer.shadowOffset = CGSizeMake(0, 2);
+      menuCard.layer.shadowRadius = 8.0;
+      contentContainer = menuCard;
+  }
     menuCard.translatesAutoresizingMaskIntoConstraints = NO;
     
     // Reply row
@@ -306,26 +341,26 @@
     UIButton *copyBtn = [self createMenuRowButton:@"Copy" icon:@"doc.on.doc"];
     [copyBtn addTarget:self action:@selector(handleCopy) forControlEvents:UIControlEventTouchUpInside];
     
-    [menuCard addSubview:replyBtn];
-    [menuCard addSubview:separator];
-    [menuCard addSubview:copyBtn];
+    [contentContainer addSubview:replyBtn];
+    [contentContainer addSubview:separator];
+    [contentContainer addSubview:copyBtn];
     
     [NSLayoutConstraint activateConstraints:@[
-        [replyBtn.topAnchor constraintEqualToAnchor:menuCard.topAnchor],
-        [replyBtn.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor],
-        [replyBtn.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [replyBtn.topAnchor constraintEqualToAnchor:contentContainer.topAnchor],
+        [replyBtn.leadingAnchor constraintEqualToAnchor:contentContainer.leadingAnchor],
+        [replyBtn.trailingAnchor constraintEqualToAnchor:contentContainer.trailingAnchor],
         [replyBtn.heightAnchor constraintEqualToConstant:44.0],
         
         [separator.topAnchor constraintEqualToAnchor:replyBtn.bottomAnchor],
-        [separator.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor constant:16.0],
-        [separator.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [separator.leadingAnchor constraintEqualToAnchor:contentContainer.leadingAnchor],
+        [separator.trailingAnchor constraintEqualToAnchor:contentContainer.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:0.5],
         
         [copyBtn.topAnchor constraintEqualToAnchor:separator.bottomAnchor],
-        [copyBtn.leadingAnchor constraintEqualToAnchor:menuCard.leadingAnchor],
-        [copyBtn.trailingAnchor constraintEqualToAnchor:menuCard.trailingAnchor],
+        [copyBtn.leadingAnchor constraintEqualToAnchor:contentContainer.leadingAnchor],
+        [copyBtn.trailingAnchor constraintEqualToAnchor:contentContainer.trailingAnchor],
         [copyBtn.heightAnchor constraintEqualToConstant:44.0],
-        [copyBtn.bottomAnchor constraintEqualToAnchor:menuCard.bottomAnchor],
+        [copyBtn.bottomAnchor constraintEqualToAnchor:contentContainer.bottomAnchor],
     ]];
     
     // Wrap in stack for existing positioning logic
@@ -409,9 +444,6 @@
 
 - (void)dismiss
 {
-    // Calculate where the bubble center will be when it returns
-    CGPoint originalCenter = CGPointMake(CGRectGetMidX(_originalFrame), CGRectGetMidY(_originalFrame));
-    
     // Animate menus back into the bubble first
     [UIView animateWithDuration:0.25
                           delay:0
@@ -419,13 +451,11 @@
           initialSpringVelocity:0.3
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
-        // Menus scale down and move toward bubble center
-        self.reactionBar.transform = CGAffineTransformMakeScale(0.01, 0.01);
-        self.reactionBar.center = originalCenter;
+        // Menus scale down vertically only (anchor points already set)
+        self.reactionBar.transform = CGAffineTransformMakeScale(1.0, 0.01);
         self.reactionBar.alpha = 0.0;
         
-        self.actionStack.transform = CGAffineTransformMakeScale(0.01, 0.01);
-        self.actionStack.center = originalCenter;
+        self.actionStack.transform = CGAffineTransformMakeScale(1.0, 0.01);
         self.actionStack.alpha = 0.0;
     } completion:nil];
     

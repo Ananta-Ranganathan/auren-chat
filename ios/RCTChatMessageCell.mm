@@ -19,7 +19,9 @@
 @property (nonatomic, strong) NSLayoutConstraint *labelTopToImageConstraint;
 @end
 
-@implementation RCTChatMessageCell
+@implementation RCTChatMessageCell {
+  BOOL _isUser;
+}
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
@@ -181,6 +183,7 @@
 {
   NSLog(@"configure bubbleView.bounds: %@", NSStringFromCGRect(_bubbleView.bounds));
 
+  _isUser = isUser;
   self.label.text = text;
   self.label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
   
@@ -461,7 +464,7 @@
     
     // Call the callback
     if (self.onLongPress) {
-        self.onLongPress(snapshot, frameInWindow, self.label.text, NO, self.bubbleView);
+        self.onLongPress(snapshot, frameInWindow, self.label.text, _isUser, self.bubbleView);
     }
 }
 
