@@ -188,6 +188,7 @@ function AppContent() {
                 inputRef?.current?.focus();
               }
             }}
+            settingsModalActive={true}
           />
         </View>
       </View>

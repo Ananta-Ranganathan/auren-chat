@@ -38,6 +38,7 @@ export interface NativeProps extends ViewProps {
   onContextMenuDismiss: CodegenTypes.DirectEventHandler<{
     shouldRefocusComposer: boolean;
   }>;
+  settingsModalActive: boolean;
 }
 
 export default codegenNativeComponent<NativeProps>(

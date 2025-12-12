@@ -29,6 +29,7 @@ using namespace facebook::react;
   CGFloat _composerHeight;
   BOOL _contextMenuActive;
   BOOL _keyboardWasVisible;
+  BOOL _settingsModalActive;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider
@@ -113,6 +114,7 @@ UIColor *colorFromHex(const std::string &hex) {
   _themeBaseColor = colorFromHex(newViewProps.theme.mode);
   _botGradientStart = colorFromHex(newViewProps.theme.color1);
   _botGradientEnd = colorFromHex(newViewProps.theme.color2);
+  _settingsModalActive = newViewProps.settingsModalActive;
   if (oldProps) {
       const auto &oldViewProps = *std::static_pointer_cast<AurenChatViewProps const>(oldProps);
       if (oldViewProps.theme.color1 != newViewProps.theme.color1 ||
@@ -366,6 +368,9 @@ UIColor *colorFromHex(const std::string &hex) {
 - (void)handleKeyboardNotification:(NSNotification *)notification
 {
   if (_contextMenuActive) {
+    return;
+  }
+  if (_settingsModalActive) {
     return;
   }
   NSDictionary *userInfo = notification.userInfo;
