@@ -272,7 +272,6 @@ UIColor *colorFromHex(const std::string &hex) {
         
         [CATransaction commit];
         
-//        _collectionView.scrollEnabled = YES;
         _isLoadingOlderMessages = NO;
         
         if (hasReadReceiptChanges) {
@@ -521,8 +520,7 @@ UIColor *colorFromHex(const std::string &hex) {
         if (_eventEmitter) {
             auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(_eventEmitter);
             if (emitter) {
-                _isLoadingOlderMessages = YES;
-//                _collectionView.scrollEnabled = NO;
+                _isLoadingOlderMessages = _messages.size() > 0;
                 emitter->onRequestOlderMessages({});
             }
         }
