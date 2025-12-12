@@ -429,7 +429,8 @@ UIColor *colorFromHex(const std::string &hex) {
 //      }
 //    }
 //  };
-  
+  cell.layer.zPosition = (CGFloat)indexPath.item;
+
   return cell;
 }
 - (void)handleKeyboardNotification:(NSNotification *)notification
