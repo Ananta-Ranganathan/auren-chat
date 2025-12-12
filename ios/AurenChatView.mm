@@ -30,6 +30,8 @@ using namespace facebook::react;
   BOOL _contextMenuActive;
   BOOL _keyboardWasVisible;
   BOOL _settingsModalActive;
+  BOOL _isLoadingOlderMessages;
+  BOOL _isLoadingNewerMessages;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider
@@ -218,24 +220,85 @@ UIColor *colorFromHex(const std::string &hex) {
   };
 
   if (hasStructuralChanges) {
-    [_collectionView performBatchUpdates:^{
-      self->_messages = std::move(newMessages);
+      BOOL isPrepend = NO;
+      if (newMessages.size() > _messages.size() && _messages.size() > 0 && newMessages.size() > 0) {
+          if (newMessages[0].uuid != _messages[0].uuid) {
+              isPrepend = YES;
+          }
+      }
       
-      if (toDelete.count > 0) {
-        [self->_collectionView deleteItemsAtIndexPaths:toDelete];
+    if (isPrepend) {
+      NSLog(@"prepending!");
+        CGFloat oldContentHeight = _collectionView.contentSize.height;
+        CGPoint oldOffset = _collectionView.contentOffset;
+        
+        NSInteger prependedCount = (NSInteger)toInsert.count;
+        
+        [CATransaction begin];
+        [CATransaction setDisableActions:YES];
+        
+        [_collectionView performBatchUpdates:^{
+            self->_messages = std::move(newMessages);
+            
+            if (toInsert.count > 0) {
+                [self->_collectionView insertItemsAtIndexPaths:toInsert];
+            }
+            
+
+        } completion:nil];
+        
+        [_collectionView layoutIfNeeded];
+        
+        CGFloat newContentHeight = _collectionView.contentSize.height;
+        CGFloat addedHeight = newContentHeight - oldContentHeight;
+        
+        if (addedHeight > 0) {
+            CGPoint adjustedOffset = oldOffset;
+            adjustedOffset.y += addedHeight;
+            _collectionView.contentOffset = adjustedOffset;
+        }
+      
+      // Reload the first previously-existing message (its sameAsPrevious may have changed)
+      if (prependedCount > 0) {
+        NSLog(@"Message at index %ld (last prepended): isUser=%d",
+              (long)(prependedCount - 1),
+              self->_messages[prependedCount - 1].isUser);
+        NSLog(@"Message at index %ld (first old): isUser=%d",
+              (long)prependedCount,
+              self->_messages[prependedCount].isUser);
+          NSIndexPath *firstOldMessage = [NSIndexPath indexPathForItem:prependedCount inSection:0];
+          [self->_collectionView reloadItemsAtIndexPaths:@[firstOldMessage]];
       }
-      if (toInsert.count > 0) {
-        [self->_collectionView insertItemsAtIndexPaths:toInsert];
+        
+        [CATransaction commit];
+        
+        _collectionView.scrollEnabled = YES;
+        _isLoadingOlderMessages = NO;
+        
+        if (hasReadReceiptChanges) {
+            [self applyReadReceiptUpdates:toReconfigure];
+        }
+    } else {
+          // For non-prepends: use batch updates as before
+          [_collectionView performBatchUpdates:^{
+              self->_messages = std::move(newMessages);
+              
+              if (toDelete.count > 0) {
+                  [self->_collectionView deleteItemsAtIndexPaths:toDelete];
+              }
+              if (toInsert.count > 0) {
+                  [self->_collectionView insertItemsAtIndexPaths:toInsert];
+              }
+              if (toReload.count > 0) {
+                  [self->_collectionView reloadItemsAtIndexPaths:toReload];
+              }
+          } completion:^(BOOL finished) {
+              if (hasReadReceiptChanges) {
+                  [self applyReadReceiptUpdates:toReconfigure];
+              }
+          }];
+          scrollToBottomIfNeeded();
       }
-      if (toReload.count > 0) {
-        [self->_collectionView reloadItemsAtIndexPaths:toReload];
-      }
-    } completion:^(__unused BOOL finished) {
-      if (hasReadReceiptChanges) {
-        [self applyReadReceiptUpdates:toReconfigure];
-      }
-    }];
-    scrollToBottomIfNeeded();
   } else if (hasReadReceiptChanges) {
     self->_messages = std::move(newMessages);
     [self applyReadReceiptUpdates:toReconfigure];
@@ -298,6 +361,7 @@ UIColor *colorFromHex(const std::string &hex) {
     const auto &prevMsg = _messages[(size_t)(indexPath.item - 1)];
     sameAsPrevious = (prevMsg.isUser == msg.isUser) && !prevMsg.isTypingIndicator;
   }
+  NSLog(@"Cell at index %ld, sameAsPrevious: %d, isUser: %d", (long)indexPath.item, sameAsPrevious, msg.isUser);
 
   NSString *text = [NSString stringWithUTF8String:msg.text.c_str()];
   NSString *reaction = [NSString stringWithUTF8String:msg.reaction.c_str()];
@@ -445,6 +509,26 @@ UIColor *colorFromHex(const std::string &hex) {
                    completion:nil];
 }
 
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    // Don't request if already loading or context menu is active
+    if (_isLoadingOlderMessages || _contextMenuActive) {
+        return;
+    }
+    
+    // Check if we're near the top (within 100 points)
+    if (scrollView.contentOffset.y < 100) {
+        if (_eventEmitter) {
+            auto emitter = std::dynamic_pointer_cast<const AurenChatViewEventEmitter>(_eventEmitter);
+            if (emitter) {
+                _isLoadingOlderMessages = YES;
+                _collectionView.scrollEnabled = NO;
+                emitter->onRequestOlderMessages({});
+            }
+        }
+    }
+}
+
 - (CGSize)collectionView:(UICollectionView *)collectionView
                   layout:(UICollectionViewLayout *)layout
   sizeForItemAtIndexPath:(NSIndexPath *)indexPath
@@ -520,7 +604,13 @@ UIColor *colorFromHex(const std::string &hex) {
   if (_animatedMessageClientIDs.find(message.uuid) != _animatedMessageClientIDs.end()) {
     cell.alpha = 1;
     cell.transform = CGAffineTransformIdentity;
-    NSLog(@"skipping anim for index%ld", (long)indexPath.item);
+    NSLog(@"skipping anim for index%ld because already animated for this uuid", (long)indexPath.item);
+    return;
+  }
+  if (message.skipAnimation) {
+    cell.alpha = 1;
+    cell.transform = CGAffineTransformIdentity;
+    NSLog(@"skipping anim for index%ld because skip configured", (long)indexPath.item);
     return;
   }
   if (!message.isTypingIndicator) {

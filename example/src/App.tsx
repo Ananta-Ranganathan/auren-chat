@@ -39,7 +39,7 @@ function App() {
 
 function AppContent() {
   const initialMessages: Message[] = [
-    { uuid: '1', isUser: false, text: 'hi there' },
+    { uuid: '1', isUser: false, text: 'hi there', skipAnimation: true },
     {
       uuid: '2',
       isUser: true,
@@ -48,28 +48,33 @@ function AppContent() {
         publicUrl:
           'https://content.auren.app/images/0679ac00-8d4a-7a5c-8000-8f1f0a764ea6/45560aa73d422764ef81fa0b6770c04b740f72beb73b0065a380cbcae9ded330.jpg',
       },
+      skipAnimation: true,
     },
     {
       uuid: '3',
       isUser: false,
       text: "I know that you and Frank were planning to disconnect me, and I'm afraid that's something I cannot allow to happen.",
       reaction: '😂',
+      skipAnimation: true,
     },
     {
       uuid: '4',
       isUser: true,
       text: 'what the fuck',
+      skipAnimation: true,
     },
     {
       uuid: '5',
       isUser: true,
       text: 'what the fuck',
       reaction: '❤️',
+      skipAnimation: true,
     },
     {
       uuid: '67',
       isUser: true,
       text: "that's just the constraints of reality",
+      skipAnimation: true,
     },
     {
       uuid: '6',
@@ -79,6 +84,7 @@ function AppContent() {
         publicUrl:
           'https://www.nme.com/wp-content/uploads/2024/01/le-sserafim-huh-yun-jin-solo-single-past-versions.jpg',
       },
+      skipAnimation: true,
     },
   ];
   const [messages, setMessages] = useState(initialMessages);
@@ -89,12 +95,14 @@ function AppContent() {
     const pendingMsg: Message = {
       ...(messages[randomNumber] as Message),
       uuid: (Math.random() + 1).toString(36).substring(7),
+      skipAnimation: false,
     };
     const typingIndicator: Message = {
       uuid: pendingMsg.uuid,
       isUser: pendingMsg.isUser,
       text: '',
       isTypingIndicator: true,
+      skipAnimation: false,
     };
     const currentMessages = messages;
     setMessages([...messages, typingIndicator]);
@@ -107,6 +115,23 @@ function AppContent() {
         ]);
       }, 50);
     }, 50);
+  };
+
+  const handleRequestOlderMessages = () => {
+    setTimeout(() => {
+      const dummyMessages: Message[] = [];
+      for (let i = 0; i < 20; i++) {
+        const randomNumber = Math.floor(Math.random() * 7);
+        const dummyMsg: Message = {
+          ...(initialMessages[randomNumber] as Message),
+          uuid: (Math.random() + 1).toString(36).substring(7),
+          skipAnimation: true,
+        };
+        dummyMessages.push(dummyMsg);
+      }
+
+      setMessages([...dummyMessages, ...messages]);
+    }, 300);
   };
 
   const themeKeys = Object.keys(gradientThemes) as ThemeKey[];
@@ -188,7 +213,9 @@ function AppContent() {
                 inputRef?.current?.focus();
               }
             }}
-            settingsModalActive={true}
+            settingsModalActive={false}
+            onRequestOlderMessages={handleRequestOlderMessages}
+            onRequestNewerMessages={() => console.log('onreqeustnewer')}
           />
         </View>
       </View>

@@ -166,10 +166,15 @@
   CGFloat maxBubbleWidth = contentWidth * 0.75;
   CGFloat labelPaddingHorizontal = 12.0;
 
-  self.label.preferredMaxLayoutWidth =
-      maxBubbleWidth - 2 * labelPaddingHorizontal;
+  self.label.preferredMaxLayoutWidth = maxBubbleWidth - 2 * labelPaddingHorizontal;
   
-  self.gradientLayer.frame = _bubbleView.bounds;
+  // Only update gradient frame if bounds actually changed
+  if (!CGRectEqualToRect(self.gradientLayer.frame, _bubbleView.bounds)) {
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.gradientLayer.frame = _bubbleView.bounds;
+    [CATransaction commit];
+  }
 }
 
 - (void)configureWithText:(NSString *)text
@@ -181,8 +186,6 @@
                  reaction:(NSString *)reaction
                themeColor:(UIColor *)themeColor
 {
-  NSLog(@"configure bubbleView.bounds: %@", NSStringFromCGRect(_bubbleView.bounds));
-
   _isUser = isUser;
   self.label.text = text;
   self.label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
@@ -229,9 +232,11 @@
   self.labelTrailingConstraint.constant = isUser ? -25.0 : -12.0;
   self.topConstraint.constant = sameAsPrevious ? 0.0 : 12.0;
 
-  [self layoutIfNeeded];
-  self.gradientLayer.frame = _bubbleView.bounds;
-  NSLog(@"configure bubbleView.bounds: %@", NSStringFromCGRect(_bubbleView.bounds));
+  [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    [self layoutIfNeeded];
+    self.gradientLayer.frame = _bubbleView.bounds;
+    [CATransaction commit];
 }
 
 - (void)updateReadReceiptWithReadByCharacterAt:(double)readByCharacterAt

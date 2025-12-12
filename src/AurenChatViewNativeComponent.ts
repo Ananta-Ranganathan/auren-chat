@@ -17,6 +17,7 @@ export interface Message {
   uuid: string;
   text: string;
   isUser: boolean;
+  skipAnimation: boolean;
   readByCharacterAt?: CodegenTypes.Double;
   isTypingIndicator?: boolean;
   image?: ImageData;
@@ -27,7 +28,7 @@ export interface NativeProps extends ViewProps {
   messages: Message[];
   theme: ThemeConfiguration;
   composerHeight: CodegenTypes.Double;
-  onRequestDismissKeyboard?: CodegenTypes.DirectEventHandler<null>;
+  onRequestDismissKeyboard: CodegenTypes.DirectEventHandler<null>;
   onReply: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
   onCopy: CodegenTypes.DirectEventHandler<{ messageUuid: string }>;
   onReactionSelect: CodegenTypes.DirectEventHandler<{
@@ -38,6 +39,8 @@ export interface NativeProps extends ViewProps {
   onContextMenuDismiss: CodegenTypes.DirectEventHandler<{
     shouldRefocusComposer: boolean;
   }>;
+  onRequestOlderMessages: CodegenTypes.DirectEventHandler<null>;
+  onRequestNewerMessages: CodegenTypes.DirectEventHandler<null>;
   settingsModalActive: boolean;
 }
 
