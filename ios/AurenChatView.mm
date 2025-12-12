@@ -196,7 +196,8 @@ UIColor *colorFromHex(const std::string &hex) {
       NSInteger oldIndex = it->second;
       if (_messages[oldIndex].isTypingIndicator != newMessages[i].isTypingIndicator) {
         [toReload addObject:[NSIndexPath indexPathForItem:i inSection:0]];
-      } else if (_messages[oldIndex].readByCharacterAt != newMessages[i].readByCharacterAt) {
+      } else if (_messages[oldIndex].readByCharacterAt != newMessages[i].readByCharacterAt ||
+                 _messages[oldIndex].reaction != newMessages[i].reaction) {
         [toReconfigure addObject:[NSIndexPath indexPathForItem:i inSection:0]];
       }
     }
@@ -319,8 +320,11 @@ UIColor *colorFromHex(const std::string &hex) {
       continue;
     }
     const auto &message = _messages[(size_t)indexPath.item];
-    [(RCTChatMessageCell *)cell updateReadReceiptWithReadByCharacterAt:message.readByCharacterAt
-                                                                isUser:message.isUser];
+    RCTChatMessageCell *msgCell = (RCTChatMessageCell *)cell;
+    [msgCell updateReadReceiptWithReadByCharacterAt:message.readByCharacterAt
+                                             isUser:message.isUser];
+    NSString *reaction = [NSString stringWithUTF8String:message.reaction.c_str()];
+    [msgCell updateReaction:reaction themeColor:_themeBaseColor isUser:message.isUser];
   }
 }
 

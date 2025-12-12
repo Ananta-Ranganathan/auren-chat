@@ -170,6 +170,14 @@ function AppContent() {
     };
   }, []);
 
+  const handleReactionSelect = (uuid: string, emoji: string) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.uuid === uuid ? { ...msg, reaction: emoji } : msg
+      )
+    );
+  };
+
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
   return (
     <>
@@ -197,13 +205,17 @@ function AppContent() {
               }, 500);
             }}
             onCopy={(e) => console.log('oncopy', e.nativeEvent.messageUuid)}
-            onReactionSelect={(e) =>
+            onReactionSelect={(e) => {
               console.log(
                 'onreactionselect',
                 e.nativeEvent.messageUuid,
                 e.nativeEvent.emoji
-              )
-            }
+              );
+              handleReactionSelect(
+                e.nativeEvent.messageUuid,
+                e.nativeEvent.emoji
+              );
+            }}
             onEmojiPickerOpen={(e) =>
               console.log('onEmojiPickerOpen', e.nativeEvent.messageUuid)
             }

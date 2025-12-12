@@ -252,6 +252,25 @@
   self.readReceiptImageView.image = [UIImage systemImageNamed:imageName];
 }
 
+- (void)updateReaction:(NSString *)reaction themeColor:(UIColor *)themeColor isUser:(BOOL)isUser
+{
+  BOOL hasReaction = reaction.length > 0;
+  self.reactionContainer.hidden = !hasReaction;
+  self.reactionLabel.text = reaction;
+  
+  UIColor *reactionBackground = themeColor ?: [UIColor whiteColor];
+  CGFloat r = 0, g = 0, b = 0, a = 0;
+  if ([reactionBackground getRed:&r green:&g blue:&b alpha:&a]) {
+    if (r < 0.02 && g < 0.02 && b < 0.02) {
+      reactionBackground = [UIColor colorWithRed:0.118 green:0.118 blue:0.118 alpha:1.0];
+    }
+  }
+  self.reactionContainer.backgroundColor = reactionBackground;
+  self.reactionLeadingConstraint.active = isUser;
+  self.reactionTrailingConstraint.active = !isUser;
+  self.reactionTopConstraint.constant = hasReaction ? -6.0 : 0.0;
+}
+
 
 - (void)configureWithImage:(NSDictionary * _Nullable)image
 {
@@ -465,7 +484,14 @@
     // Get frame in window
     UIWindow *window = self.window;
     CGRect frameInWindow = [self.bubbleView convertRect:self.bubbleView.bounds toView:window];
-
+    
+    // Add reaction snapshot if visible
+    if (!self.reactionContainer.hidden) {
+        UIView *reactionSnapshot = [self.reactionContainer snapshotViewAfterScreenUpdates:YES];
+        CGRect reactionFrameInBubble = [self.reactionContainer convertRect:self.reactionContainer.bounds toView:self.bubbleView];
+        reactionSnapshot.frame = reactionFrameInBubble;
+        [snapshot addSubview:reactionSnapshot];
+    }
     
     // Call the callback
     if (self.onLongPress) {

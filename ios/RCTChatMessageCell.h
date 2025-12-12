@@ -38,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)configureWithImage:(NSDictionary * _Nullable)image;
 - (void)updateReadReceiptWithReadByCharacterAt:(double)readByCharacterAt
                                         isUser:(BOOL)isUser;
+- (void)updateReaction:(NSString *)reaction themeColor:(UIColor *)themeColor isUser:(BOOL)isUser;
+
 
 @end
 
